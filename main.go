@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"chatProgram/blockchain"
+	//"fmt"
+	"fmt"
+)
 
 func main() {
-	fmt.Println("test")
+	var initialBlock blockchain.Block
+
+	fmt.Println(initialBlock)
+
+
 }
