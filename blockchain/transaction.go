@@ -1,11 +1,11 @@
 package blockchain
 
 type Transaction struct {
-	author 		string
-	channel 	string
-	message 	string
+	Author 		string
+	Channel 	string
+	Message 	string
 }
 
-func toString(trans Transaction) string {
-	return trans.author + " posted \"" + trans.message + "\" on " + trans.message + " channel"
+func (trans Transaction) ToString() string {
+	return trans.Author + " posted \"" + trans.Message + "\" on " + trans.Channel + " channel"
 }
