@@ -30,7 +30,7 @@ func main() {
 
 	go func() {
 		Peers = make([]string, 0)
-		Chain = blockchain.BlockChain{1, make([]blockchain.Block, 1)}
+		Chain = blockchain.BlockChain{make([]blockchain.Block, 1)}
 		block := blockchain.InitialBlock()
 		fmt.Println(block.ToString())
 		Chain.Blocks[0] = block
@@ -115,7 +115,7 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if m.IsValid() {
-		if m.Length > Chain.Length {
+		if m.Len() > Chain.Len() {
 			if blockchain.AreChainsSameBranch(m, Chain) {
 				Chain = m
 				fmt.Println("Valid blockchain supplied! Replaced with: ")
@@ -124,7 +124,7 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 			} else {
 				fmt.Println("Chains are of different branches! Not replacing mine")
 			}
-		} else if Chain.Length == 1 && m.Length == 1 {
+		} else if Chain.Len() == 1 && m.Len() == 1 {
 			Chain = m
 			fmt.Println("Both chains are 1 length; replacing mine!")
 			//spew.Dump(Chain)
@@ -154,15 +154,11 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	oldBlock := Chain.GetNewestBlock()
-	newBlock, err := blockchain.GenerateBlock(oldBlock, m)
+	newBlock := blockchain.GenerateBlock(oldBlock, m)
 	fmt.Println("New block:\n" + newBlock.ToString())
-	if err != nil {
-		respondWithJSON(w, r, http.StatusInternalServerError, m)
-		return
-	}
+
 	if blockchain.IsBlockSequenceValid(newBlock, oldBlock) {
 		Chain.Blocks = append(Chain.Blocks, newBlock)
-		Chain.Length++
 		//Block = blockchain.CheckLongerChain(newBlock, Block)
 		fmt.Println("Successfully added: {" + m.ToString() + "} to the chain")
 		broadcastToAllPeers()

@@ -7,5 +7,9 @@ type Transaction struct {
 }
 
 func (trans Transaction) ToString() string {
-	return trans.Author + " posted \"" + trans.Message + "\" on " + trans.Channel + " channel"
+	return trans.Author + " posted \"" + trans.Message + "\" on the " + trans.Channel + " channel"
+}
+
+func SampleTransaction() Transaction {
+	return Transaction{"John Doe", "Test", "Sample message."}
 }

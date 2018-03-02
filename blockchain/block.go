@@ -6,6 +6,7 @@ import (
 	"time"
 	"strconv"
 	"fmt"
+	"log"
 )
 
 type Block struct {
@@ -16,11 +17,21 @@ type Block struct {
 	PrevHash     string
 }
 
-type BlockChain struct {
-	Length		int
-	Blocks		[]Block
+//ToString simply returns a human-legible representation of a Block in question
+func (block Block) ToString() string {
+	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
+		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n"
+		str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
+		if len(block.PrevHash) > 4 {
+			str += block.PrevHash[0:5] + "...\n]\n"
+		} else {
+			str += "...\n]\n"
+		}
+		return str
 }
 
+//InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
+//and an accurate/valid hash (albeit no previous hash for obvious reasons)
 func InitialBlock() Block {
 	var initBlock Block
 	t := time.Now()
@@ -34,6 +45,7 @@ func InitialBlock() Block {
 	return initBlock
 }
 
+//calcHash calculates the hash for a given block based on ALL its attributes
 func calcHash(block Block) string {
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
@@ -46,20 +58,10 @@ func calcHash(block Block) string {
 	return hex.EncodeToString(hashed)
 }
 
-func (block Block) ToString() string {
-	var str string
-	str =  "Block @ index " + strconv.Itoa(int(block.Index)) + " was created at " + block.Timestamp +
-		" and has transactions: \n[\n";
-
-		for _, v := range block.Transactions {
-			str += v.ToString() + "\n"
-		}
-		str += "]\nWith Hash: " + block.Hash + " and prevhash: " + block.PrevHash
-
-		return str
-}
-
-func GenerateBlock(oldBlock Block, transaction Transaction) (Block, error) {
+//GenerateBlock accepts a "base" block to append to, and a transaction. The function
+//creates a new block from the base block, and appends the transaction to it (rehashing and updating
+//as necessary)
+func GenerateBlock(oldBlock Block, transaction Transaction) Block {
 	var newBlock Block
 
 	t := time.Now()
@@ -71,67 +73,28 @@ func GenerateBlock(oldBlock Block, transaction Transaction) (Block, error) {
 
 	newBlock.Hash = calcHash(newBlock)
 
-	return newBlock, nil
+	return newBlock
 }
 
-
+//IsBlockSequenceValid checks if an old block and a new block are capable of following one another;
+//whether they form an valid chain of blocks or not. If the indexes or hashes (previous and current)
+//do not match, then the sequence is invalid
 func IsBlockSequenceValid(newBlock, oldBlock Block) bool {
 	if oldBlock.Index+1 != newBlock.Index {
+		fmt.Println(newBlock.ToString() + "doesn't have the correct index to follow:\n" + oldBlock.ToString())
 		return false
 	}
 
 	if oldBlock.Hash != newBlock.PrevHash {
+		log.Println(newBlock.ToString() + "has a prevHash that doesn't match the hash of:" + oldBlock.ToString())
 		return false
 	}
 
 	str := calcHash(newBlock)
 	if str != newBlock.Hash {
-		fmt.Println("Mismatch hash!")
-		fmt.Println("New: " + str + " Old: " + newBlock.Hash)
-
+		log.Println(newBlock.ToString() + "has a hash that doesn't match: " + str)
 		return false
 	}
 
 	return true
-}
-
-func (chain BlockChain) IsValid() bool {
-	if chain.Length != len(chain.Blocks) {
-		return false
-	}
-
-	if chain.Length < 2 {
-		return true
-	}
-
-	for i := 0; i < chain.Length-1; i++ {
-		oldB := chain.Blocks[i]
-		newB := chain.Blocks[i+1]
-
-		if !IsBlockSequenceValid(newB, oldB) {
-			return false
-		}
-	}
-	return true
-}
-
-func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
-	var min = 0
-	if chain1.Length > chain2.Length {
-		min = chain2.Length
-	} else {
-		min = chain1.Length
-	}
-	for i := 0; i < min; i++ {
-		a := chain1.Blocks[i]
-		b := chain2.Blocks[i]
-		if calcHash(a) != calcHash(b) {
-			return false
-		}
-	}
-	return true
-}
-
-func (chain BlockChain) GetNewestBlock() Block {
-	return chain.Blocks[chain.Length-1]
 }
