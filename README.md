@@ -1,4 +1,6 @@
 # GoBlockChat
+[![GoDoc](https://godoc.org/github.com/denverquane/GoBlockChat?status.png)](https://godoc.org/github.com/denverquane/GoBlockChat)
+
 This app seeks to demonstrate using blockchain tech. for a chat application like Slack or Discord.
 
 By using the blockchain, no user can delete, modify, or falsify chat records and exchanges without other users
