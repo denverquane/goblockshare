@@ -1,3 +1,5 @@
+//Blockchain contains the crucial aspects of maintaining a blockchain, such as Blocks, Transactions, and the operations
+//these structures need and support
 package blockchain
 
 import (
@@ -9,6 +11,9 @@ import (
 	"log"
 )
 
+//Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
+//overall state of the chain, and successive blocks of the chain. For example, a user leaving a comment on a channel
+//should be reflected in a new (immutable) block that other users would not be able to edit or remove; only "tack onto"
 type Block struct {
 	Index        int64
 	Timestamp    string
