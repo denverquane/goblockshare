@@ -1,9 +1,8 @@
 package main
 
 import (
-	"chatProgram/src/blockchain"
+	"chatProgram/blockchain"
 	"github.com/gorilla/mux"
-	//"fmt"
 	"fmt"
 	"os"
 	"log"
