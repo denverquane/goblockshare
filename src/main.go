@@ -1,7 +1,7 @@
 package main
 
 import (
-	"chatProgram/blockchain"
+	"chatProgram/src/blockchain"
 	"github.com/gorilla/mux"
 	//"fmt"
 	"fmt"
@@ -66,14 +66,14 @@ func broadcastToAllPeers() {
 }
 
 func run() error {
-	mux := makeMuxRouter()
+	muxx := makeMuxRouter()
 	httpAddr := os.Getenv("ADDR")
 	log.Println("Listening on ", os.Getenv("ADDR"))
 	go getPeersFromInput()
 
 	s := &http.Server{
 		Addr:           ":" + httpAddr,
-		Handler:        mux,
+		Handler:        muxx,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -94,14 +94,14 @@ func makeMuxRouter() http.Handler {
 	return muxRouter
 }
 
-func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
-	bytes, err := json.MarshalIndent(Chain, "", "  ")
+func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
+	data, err := json.MarshalIndent(Chain, "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	fmt.Println("GET")
-	io.WriteString(w, string(bytes))
+	io.WriteString(w, string(data))
 }
 
 func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
@@ -135,12 +135,12 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Invalid blockchain supplied; not replacing anything")
 	}
 
-	bytes, err := json.MarshalIndent(Chain, "", "  ")
+	data, err := json.MarshalIndent(Chain, "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	io.WriteString(w, string(bytes))
+	io.WriteString(w, string(data))
 }
 
 func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +167,7 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 
-func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
+func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload interface{}) {
 	response, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
