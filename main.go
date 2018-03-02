@@ -11,14 +11,16 @@ import (
 	"time"
 	"encoding/json"
 	"io"
-	//"github.com/joho/godotenv"
 	"github.com/davecgh/go-spew/spew"
 	"bytes"
 	"io/ioutil"
 	"github.com/joho/godotenv"
+	"bufio"
+	"strings"
 )
 
 var Chain blockchain.BlockChain
+var Peers []string
 
 func main() {
 	err := godotenv.Load()
@@ -27,6 +29,7 @@ func main() {
 	}
 
 	go func() {
+		Peers = make([]string, 0)
 		Chain = blockchain.BlockChain{1, make([]blockchain.Block, 1)}
 		block := blockchain.InitialBlock()
 		fmt.Println(block.ToString())
@@ -35,22 +38,39 @@ func main() {
 	log.Fatal(run())
 
 }
-// This is a test main that allows for syncing the blockchain locally
 
-//func main(){
-//	block1 := blockchain.InitialBlock()
-//	block2,_ := blockchain.GenerateBlock(block1, blockchain.Transaction{"me", "test", "message"})
-//	blocks := make([]blockchain.Block, 2)
-//	blocks[0] = block1
-//	blocks[1] = block2
-//	chain := blockchain.BlockChain{2, blocks}
-//	broadcastChain("http://127.0.0.1:8090/chainUpdate", chain)
-//}
+func getPeersFromInput(){
+	var done = false
+	for !done {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Enter URL to broadcast to, WITH port (ex: 127.0.0.1:8090), or \"quit\" if you're done: ")
+		text, _ := reader.ReadString('\n')
+		text = strings.Replace(text, "\n", "", 1)
+		text = strings.Replace(text, " ", "", 1)
+		fmt.Println("Entered: \"" + text + "\"")
+		if text == "quit" {
+			done = true
+		} else if text == "" {
+			fmt.Println("Empty string supplied")
+		} else {
+			broadcastChain("http://" + text + "/chainUpdate", Chain)
+			Peers = append(Peers, "http://" + text + "/chainUpdate")
+		}
+	}
+}
+
+func broadcastToAllPeers() {
+	for _, v := range Peers {
+		broadcastChain(v, Chain)
+	}
+}
 
 func run() error {
 	mux := makeMuxRouter()
 	httpAddr := os.Getenv("ADDR")
 	log.Println("Listening on ", os.Getenv("ADDR"))
+	go getPeersFromInput()
+
 	s := &http.Server{
 		Addr:           ":" + httpAddr,
 		Handler:        mux,
@@ -80,6 +100,7 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("GET")
 	io.WriteString(w, string(bytes))
 }
 
@@ -99,11 +120,16 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 				Chain = m
 				fmt.Println("Valid blockchain supplied! Replaced with: ")
 				spew.Dump(Chain)
+				broadcastToAllPeers()
 			} else {
 				fmt.Println("Chains are of different branches! Not replacing mine")
 			}
-		} else {
-			fmt.Println("Chains are the same length; not replacing anything")
+		} else if Chain.Length == 1 && m.Length == 1 {
+			Chain = m
+			fmt.Println("Both chains are 1 length; replacing mine!")
+			//spew.Dump(Chain)
+		}else {
+			fmt.Println("Chains are the same or lesser length; not replacing anything")
 		}
 	} else {
 		fmt.Println("Invalid blockchain supplied; not replacing anything")
@@ -139,10 +165,10 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 		Chain.Length++
 		//Block = blockchain.CheckLongerChain(newBlock, Block)
 		fmt.Println("Successfully added: {" + m.ToString() + "} to the chain")
+		broadcastToAllPeers()
 	}
 
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
-
 }
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
