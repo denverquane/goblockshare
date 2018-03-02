@@ -11,8 +11,11 @@ import (
 	"time"
 	"encoding/json"
 	"io"
-	"github.com/joho/godotenv"
+	//"github.com/joho/godotenv"
 	"github.com/davecgh/go-spew/spew"
+	"bytes"
+	"io/ioutil"
+	"github.com/joho/godotenv"
 )
 
 var Chain blockchain.BlockChain
@@ -32,6 +35,17 @@ func main() {
 	log.Fatal(run())
 
 }
+// This is a test main that allows for syncing the blockchain locally
+
+//func main(){
+//	block1 := blockchain.InitialBlock()
+//	block2,_ := blockchain.GenerateBlock(block1, blockchain.Transaction{"me", "test", "message"})
+//	blocks := make([]blockchain.Block, 2)
+//	blocks[0] = block1
+//	blocks[1] = block2
+//	chain := blockchain.BlockChain{2, blocks}
+//	broadcastChain("http://127.0.0.1:8090/chainUpdate", chain)
+//}
 
 func run() error {
 	mux := makeMuxRouter()
@@ -140,4 +154,24 @@ func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload i
 	}
 	w.WriteHeader(code)
 	w.Write(response)
+}
+
+func broadcastChain(url string, chain blockchain.BlockChain) {
+	data, err := json.MarshalIndent(chain, "", "  ")
+	//fmt.Println(string(data))
+	var bytee = []byte(string(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
+	req.Header.Set("X-Custom-Header", "myvalue")
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
 }
