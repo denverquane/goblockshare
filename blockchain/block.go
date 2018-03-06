@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"fmt"
 	"log"
+	"strings"
 )
 
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
@@ -20,6 +21,8 @@ type Block struct {
 	Transactions []Transaction
 	Hash         string
 	PrevHash     string
+	Difficulty   int
+	Nonce		 string
 }
 
 //ToString simply returns a human-legible representation of a Block in question
@@ -45,6 +48,7 @@ func InitialBlock() Block {
 	initBlock.Transactions = make([]Transaction, 0)
 	initBlock.PrevHash = ""
 	initBlock.Hash = t.String()
+	initBlock.Difficulty = 1
 
 	initBlock.Hash = calcHash(initBlock)
 	return initBlock
@@ -56,11 +60,16 @@ func calcHash(block Block) string {
 	for _, v := range block.Transactions {
 		record += v.ToString()
 	}
-	record += block.PrevHash
+	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
 	return hex.EncodeToString(hashed)
+}
+
+func isHashValid(hash string, difficulty int) bool {
+	prefix := strings.Repeat("0", difficulty)
+	return strings.HasPrefix(hash, prefix)
 }
 
 //GenerateBlock accepts a "base" block to append to, and a transaction. The function
@@ -75,9 +84,21 @@ func GenerateBlock(oldBlock Block, transaction Transaction) Block {
 	newBlock.Timestamp = t.String()
 	newBlock.Transactions = append(oldBlock.Transactions, transaction)
 	newBlock.PrevHash = oldBlock.Hash
+	newBlock.Difficulty = oldBlock.Difficulty
 
-	newBlock.Hash = calcHash(newBlock)
+	for i := 0; ; i++ {
+		hex := fmt.Sprintf("%x", i)
+		newBlock.Nonce = hex
+		hash := calcHash(newBlock)
 
+		if !isHashValid(hash, newBlock.Difficulty) {
+			fmt.Println("Do more work: " + hash)
+			continue
+		} else {
+			newBlock.Hash = hash
+			break
+		}
+	}
 	return newBlock
 }
 
