@@ -5,8 +5,6 @@ interface TAction {
   payload: Transaction;
 }
 
-type Trans = Transaction;
-
 const initialState = {
   transactions: [] as Transaction[]
 };
