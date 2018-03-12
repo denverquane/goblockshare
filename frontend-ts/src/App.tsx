@@ -1,6 +1,8 @@
 import * as React from 'react';
 import './App.css';
 
+// import { EditableText } from 'blueprintjs/core';
+
 const logo = require('./logo.svg');
 
 export default class App extends React.Component {
