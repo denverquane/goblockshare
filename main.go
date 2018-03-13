@@ -100,6 +100,9 @@ func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	fmt.Println("GET")
+	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	io.WriteString(w, string(data))
 }
 
@@ -174,6 +177,9 @@ func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload i
 		return
 	}
 	w.WriteHeader(code)
+	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	w.Write(response)
 }
 
@@ -184,6 +190,7 @@ func broadcastChain(url string, chain blockchain.BlockChain) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
 	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Access-Control-Allow-Origin", "*")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
