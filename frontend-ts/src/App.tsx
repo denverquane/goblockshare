@@ -1,6 +1,6 @@
 import * as React from 'react';
-import * as Blueprint from '@blueprintjs/core';
-// import { Panel } from 'react-bootstrap';
+// import * as Blueprint from '@blueprintjs/core';
+import { Panel } from 'react-bootstrap';
 import './App.css';
 
 // import { EditableText } from 'blueprintjs/core';
@@ -55,11 +55,11 @@ export default class App extends React.Component<SampleProps, SampleState> {
           {
             this.state.blocks.map((block: Block) => {
               return (
-                <div key={block.Index}>
-                  <Blueprint.Card >
-                    {block.Timestamp}
-                    </Blueprint.Card>
-                </div>
+                //               <div key={block.Index}>
+                <Panel >
+                  <Panel.Heading>{block.Timestamp}</Panel.Heading>
+                </Panel>
+                //         </div>
               );
             })
           }
