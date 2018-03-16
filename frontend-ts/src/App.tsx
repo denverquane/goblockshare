@@ -20,6 +20,8 @@ interface Block {
   Index: number;
   Timestamp: string;
   Transactions: Transaction[];
+  Hash: string;
+  PrevHash: string;
 }
 
 interface SampleState {
@@ -47,22 +49,21 @@ export default class App extends React.Component<SampleProps, SampleState> {
             Timestamp: block.Timestamp,
             Transactions: block.Transactions.map((trans: Transaction) => {
               return trans;
-            })
+            }),
+            Hash: block.Hash,
+            PrevHash: block.PrevHash
           };
         });
         let newState = { blocks: blocks };
         this.setState(newState);
-        /*tslint:disable*/
-        console.log(data);
       });
   }
 
   renderTransAsRow(trans: Transaction | undefined) {
     if (trans !== undefined) {
-      return <tr>
-        <td style={{ width: '10%' }}><Alert>Added</Alert></td>
-        <td style={{ width: '90%' }}><div>
-          <Table>
+      return (
+        <div>
+          <Table condensed={true}>
             <thead>
               <tr>
                 <th>Author</th>
@@ -77,12 +78,13 @@ export default class App extends React.Component<SampleProps, SampleState> {
             </thead>
           </Table>
         </div>
-        </td>
-      </tr>
+      );
     } else {
-      return <tr><td style={{ width: '10%' }} />
-        <td style={{ width: '90%' }}>Initial Block; No transactions</td>
-      </tr>
+      return (
+        <tr><td style={{ width: '10%' }} />
+          <td style={{ width: '90%' }}>Initial Block; No transactions</td>
+        </tr>
+      );
     }
   }
 
@@ -97,13 +99,13 @@ export default class App extends React.Component<SampleProps, SampleState> {
           {
             this.state.blocks.reverse().map((block: Block) => {
               return (
-                <ListGroupItem>
+                (<ListGroupItem>
                   <div key={block.Index} style={{ display: 'flex', flexAlign: 'center', flexDirection: 'column' }}>
                     <Table>
                       <thead>
                         <tr>
-                          <th>{block.Index}</th>
-                          <th>{block.Timestamp}</th>
+                          <th style={{ width: '10%' }}>{block.Index}</th>
+                          <th style={{ width: '90%' }}>{block.Timestamp}</th>
                         </tr>
                         {/* <ListGroup>{block.Transactions.reverse().map((trans: Transaction, index) => {
                               return <ListGroupItem>
@@ -115,16 +117,49 @@ export default class App extends React.Component<SampleProps, SampleState> {
                               </ListGroupItem>;
                             })}
                             </ListGroup> */}
-                        {this.renderTransAsRow(block.Transactions.pop())}
+
+                        <tr>
+                          <td><div><Alert>Added</Alert></div></td>
+                          <ListGroup>
+                            <ListGroupItem>
+                              <div style={{ display: 'flex' }}>
+
+                                <div style={{ width: '90%' }}>{this.renderTransAsRow(block.Transactions.pop())}</div>
+                              </div>
+
+                            </ListGroupItem>
+                          </ListGroup>
+                        </tr>
+                        <tr>
+                          <td><Alert bsStyle="warning">Old</Alert></td>
+                          <ListGroup>
+                            {block.Transactions.reverse().map((trans: Transaction, index) => {
+                              return (
+
+                                <ListGroupItem key={index}>
+                                  <div style={{ display: 'flex' }}>
+                                    <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
+                                  </div>
+                                </ListGroupItem>
+                              );
+                            }
+                            )}
+                          </ListGroup>
+                        </tr>
                       </thead>
                     </Table>
                   </div>
+                  <div style={{ display: 'flex' }}>
+                    <div style={{ width: '50%' }}><b>Hash: </b>{block.Hash} </div>
+                    <div style={{ width: '50%' }}><b>PrevHash: </b>{block.PrevHash}</div>
+                  </div>
                 </ListGroupItem>
+                )
               );
             })
           }
         </ListGroup>
-      </div>
+      </div >
     );
   }
 }
