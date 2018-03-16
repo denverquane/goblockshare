@@ -1,6 +1,10 @@
 import * as React from 'react';
 // import * as Blueprint from '@blueprintjs/core';
-import { Panel } from 'react-bootstrap';
+import {
+  ListGroup,
+  ListGroupItem,
+  Table,
+} from 'react-bootstrap';
 import './App.css';
 
 // import { EditableText } from 'blueprintjs/core';
@@ -51,19 +55,29 @@ export default class App extends React.Component<SampleProps, SampleState> {
           <img src={logo} className="App-logo" alt="logo" />
           <h1 className="App-title">Welcome to React</h1>
         </header>
-        <div>
+        <ListGroup>
           {
-            this.state.blocks.map((block: Block) => {
+            this.state.blocks.reverse().map((block: Block) => {
               return (
-                //               <div key={block.Index}>
-                <Panel >
-                  <Panel.Heading>{block.Timestamp}</Panel.Heading>
-                </Panel>
-                //         </div>
+                <ListGroupItem>
+                  <div style={{ display: 'flex', flexAlign: 'center' }}>
+                    <Table>
+                      <thead>
+                        <tr>
+                          <th>{block.Index}</th>
+                          <th>{block.Timestamp}</th>
+                        </tr>
+                        <tr>
+                          <td></td>
+                        </tr>
+                      </thead>
+                    </Table>
+                  </div>
+                </ListGroupItem>
               );
             })
           }
-        </div>
+        </ListGroup>
       </div>
     );
   }
