@@ -44,7 +44,7 @@ func InitialBlock() Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
-	initBlock.Timestamp = t.String()
+	initBlock.Timestamp = t.Format(time.RFC1123)
 	initBlock.Transactions = make([]Transaction, 0)
 	initBlock.PrevHash = ""
 	initBlock.Hash = t.String()
@@ -81,7 +81,7 @@ func GenerateBlock(oldBlock Block, transaction Transaction) Block {
 	t := time.Now()
 
 	newBlock.Index = oldBlock.Index + 1
-	newBlock.Timestamp = t.String()
+	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Transactions = append(oldBlock.Transactions, transaction)
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Difficulty = oldBlock.Difficulty
