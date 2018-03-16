@@ -1,5 +1,5 @@
 export interface Transaction {
-  author: string;
-  channel: string;
-  message: string;
+  Author: string;
+  Channel: string;
+  Message: string;
 }
