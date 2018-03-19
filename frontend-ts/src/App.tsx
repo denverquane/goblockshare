@@ -130,22 +130,23 @@ export default class App extends React.Component<SampleProps, SampleState> {
                             </ListGroupItem>
                           </ListGroup>
                         </tr>
-                        <tr>
-                          <td><Alert bsStyle="warning">Old</Alert></td>
-                          <ListGroup>
-                            {block.Transactions.reverse().map((trans: Transaction, index) => {
-                              return (
+                        {(block.Transactions.length) > 0 ?
+                          <tr>
+                            <td><Alert bsStyle="warning">Old</Alert></td>
+                            <ListGroup>
+                              {block.Transactions.reverse().map((trans: Transaction, index) => {
+                                return (
 
-                                <ListGroupItem key={index}>
-                                  <div style={{ display: 'flex' }}>
-                                    <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
-                                  </div>
-                                </ListGroupItem>
-                              );
-                            }
-                            )}
-                          </ListGroup>
-                        </tr>
+                                  <ListGroupItem key={index}>
+                                    <div style={{ display: 'flex' }}>
+                                      <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
+                                    </div>
+                                  </ListGroupItem>
+                                );
+                              }
+                              )}
+                            </ListGroup>
+                          </tr> : <tr />}
                       </thead>
                     </Table>
                   </div>
