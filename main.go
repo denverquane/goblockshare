@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	"bufio"
 	"strings"
+	"reflect"
 )
 
 var Chain blockchain.BlockChain
@@ -30,7 +31,7 @@ func main() {
 	go func() {
 		Peers = make([]string, 0)
 		Chain = blockchain.BlockChain{make([]blockchain.Block, 1)}
-		block := blockchain.InitialBlock()
+		block := blockchain.InitialBlock("AdminUser", "password")
 		fmt.Println(block.ToString())
 		Chain.Blocks[0] = block
 	}()
@@ -146,7 +147,7 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
-	var m blockchain.Transaction
+	var m blockchain.AuthTransaction
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&m); err != nil {
@@ -155,14 +156,24 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	if m.TransactionType == "" || m.Message == "" {
+		respondWithJSON(w, r, http.StatusBadRequest, "Supply transaction in this format: " + blockchain.GetTransactionFormat())
+		return
+	}
+
 	oldBlock := Chain.GetNewestBlock()
 	newBlock := blockchain.GenerateBlock(oldBlock, m)
+
+	if reflect.DeepEqual(oldBlock,newBlock) {
+		respondWithJSON(w, r, http.StatusUnauthorized, "User is not authorized to post")
+		return
+	}
 	fmt.Println("New block:\n" + newBlock.ToString())
 
 	if blockchain.IsBlockSequenceValid(newBlock, oldBlock) {
 		Chain.Blocks = append(Chain.Blocks, newBlock)
 		//Block = blockchain.CheckLongerChain(newBlock, Block)
-		fmt.Println("Successfully added: {" + m.ToString() + "} to the chain")
+		fmt.Println("Successfully added: {" + m.RemovePassword().ToString() + "} to the chain")
 		broadcastToAllPeers()
 	}
 

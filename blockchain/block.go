@@ -19,6 +19,7 @@ type Block struct {
 	Index        int64
 	Timestamp    string
 	Transactions []Transaction
+	Authors		 []string
 	Hash         string
 	PrevHash     string
 	Difficulty   int
@@ -28,7 +29,10 @@ type Block struct {
 //ToString simply returns a human-legible representation of a Block in question
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
-		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n"
+		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Authors: \n"
+			for _,v := range block.Authors {
+				str += "     " + v + "\n"
+			}
 		str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
 		if len(block.PrevHash) > 4 {
 			str += block.PrevHash[0:5] + "...\n]\n"
@@ -40,18 +44,26 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock() Block {
+func InitialBlock(username, password string) Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
 	initBlock.Transactions = make([]Transaction, 0)
+	initBlock.Authors = make([]string, 1)
+	initBlock.Authors[0] = username + ":" + hashAuth(username, password)
 	initBlock.PrevHash = ""
-	initBlock.Hash = t.String()
+	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
 	initBlock.Hash = calcHash(initBlock)
 	return initBlock
+}
+
+func hashAuth(username, password string) string {
+	h := sha256.New()
+	h.Write([]byte(username + password))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
@@ -59,6 +71,9 @@ func calcHash(block Block) string {
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
 		record += v.ToString()
+	}
+	for _, v := range block.Authors {
+		record += v
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
@@ -75,20 +90,35 @@ func isHashValid(hash string, difficulty int) bool {
 //GenerateBlock accepts a "base" block to append to, and a transaction. The function
 //creates a new block from the base block, and appends the transaction to it (rehashing and updating
 //as necessary)
-func GenerateBlock(oldBlock Block, transaction Transaction) Block {
+func GenerateBlock(oldBlock Block, transaction AuthTransaction) Block {
+	var authorized = false
+	var hash = transaction.Username + ":" + hashAuth(transaction.Username, transaction.Password)
+
+	for _, v := range oldBlock.Authors {
+		if v == hash {
+			authorized = true
+			break
+		}
+	}
+	if !authorized {
+		fmt.Println("User is not authorized!!!")
+		fmt.Println("Retaining old block")
+		return oldBlock
+	}
 	var newBlock Block
 
 	t := time.Now()
 
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
-	newBlock.Transactions = append(oldBlock.Transactions, transaction)
+	newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
+	newBlock.Authors = oldBlock.Authors
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Difficulty = oldBlock.Difficulty
 
 	for i := 0; ; i++ {
-		hex := fmt.Sprintf("%x", i)
-		newBlock.Nonce = hex
+		hexx := fmt.Sprintf("%x", i)
+		newBlock.Nonce = hexx
 		hash := calcHash(newBlock)
 
 		if !isHashValid(hash, newBlock.Difficulty) {
