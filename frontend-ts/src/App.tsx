@@ -9,7 +9,7 @@ import {
 import './App.css';
 import { Transaction } from './Transaction';
 
-// import { EditableText } from 'blueprintjs/core';
+import { Button } from '@blueprintjs/core';
 
 const logo = require('./logo.svg');
 
@@ -26,6 +26,7 @@ interface Block {
 
 interface SampleState {
   blocks: Block[];
+  isOpen: boolean;
 }
 
 export default class App extends React.Component<SampleProps, SampleState> {
@@ -35,6 +36,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
 
     this.state = {
       blocks: [],
+      isOpen: false
     };
   }
 
@@ -71,7 +73,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
                 <th>Message</th>
               </tr>
               <tr>
-                <td style={{ width: '10%' }}>{trans.Author}</td>
+                <td style={{ width: '10%' }}>{trans.Username}</td>
                 <td style={{ width: '10%' }}>{trans.Channel}</td>
                 <td style={{ width: '80%' }}>{trans.Message}</td>
               </tr>
@@ -81,9 +83,15 @@ export default class App extends React.Component<SampleProps, SampleState> {
       );
     } else {
       return (
-        <tr><td style={{ width: '10%' }} />
-          <td style={{ width: '90%' }}>Initial Block; No transactions</td>
-        </tr>
+        <div>
+          <Table condensed={true}>
+            <thead>
+              <tr><td style={{ width: '10%' }} />
+                <td style={{ width: '90%' }}>Initial Block; No transactions</td>
+              </tr>
+            </thead>
+          </Table>
+        </div>
       );
     }
   }
@@ -120,32 +128,39 @@ export default class App extends React.Component<SampleProps, SampleState> {
 
                         <tr>
                           <td><div><Alert>Added</Alert></div></td>
-                          <ListGroup>
-                            <ListGroupItem>
-                              <div style={{ display: 'flex' }}>
+                          <td>
+                            <ListGroup>
+                              <ListGroupItem>
+                                <div style={{ display: 'flex' }}>
 
-                                <div style={{ width: '90%' }}>{this.renderTransAsRow(block.Transactions.pop())}</div>
-                              </div>
+                                  <div style={{ width: '90%' }}>{this.renderTransAsRow(block.Transactions.pop())}</div>
+                                </div>
 
-                            </ListGroupItem>
-                          </ListGroup>
+                              </ListGroupItem>
+                            </ListGroup>
+                          </td>
                         </tr>
                         {(block.Transactions.length) > 0 ?
                           <tr>
-                            <td><Alert bsStyle="warning">Old</Alert></td>
-                            <ListGroup>
-                              {block.Transactions.reverse().map((trans: Transaction, index) => {
-                                return (
-
-                                  <ListGroupItem key={index}>
-                                    <div style={{ display: 'flex' }}>
-                                      <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
-                                    </div>
-                                  </ListGroupItem>
-                                );
-                              }
-                              )}
-                            </ListGroup>
+                            <td>
+                              <Button onClick={() => this.setState({ isOpen: !this.state.isOpen })}>
+                                {this.state.isOpen ? 'Hide' : 'Show'} Old Transactions
+                              </Button>
+                            </td>
+                            <td>
+                                <ListGroup>
+                                  {block.Transactions.reverse().map((trans: Transaction, index) => {
+                                    return ( this.state.isOpen ?
+                                      <ListGroupItem key={index}>
+                                        <div style={{ display: 'flex' }}>
+                                          <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
+                                        </div>
+                                      </ListGroupItem> : <ListGroupItem/>
+                                    );
+                                  }
+                                  )}
+                                </ListGroup>
+                            </td>
                           </tr> : <tr />}
                       </thead>
                     </Table>
