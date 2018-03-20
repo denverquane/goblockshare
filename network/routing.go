@@ -19,9 +19,10 @@ var Peers []string
 
 func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/chain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/users", handleGetUsers).Methods("GET")
 	muxRouter.HandleFunc("/postTransaction", handleWriteBlock).Methods("POST")
-	muxRouter.HandleFunc("/chainUpdate", handleChainUpdate).Methods("POST")
+	muxRouter.HandleFunc("/chain", handleChainUpdate).Methods("POST")
 	return muxRouter
 }
 
@@ -119,6 +120,20 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
+}
+
+func handleGetUsers(w http.ResponseWriter, r *http.Request) {
+	authors := globalChain.Blocks[len(globalChain.Blocks) - 1].Users
+	data, err := json.MarshalIndent(authors, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("GET")
+	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	io.WriteString(w, string(data))
 }
 
 func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload interface{}) {

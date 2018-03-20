@@ -19,7 +19,7 @@ type Block struct {
 	Index        int64
 	Timestamp    string
 	Transactions []Transaction
-	Authors		 []string
+	Users		 []string
 	Hash         string
 	PrevHash     string
 	Difficulty   int
@@ -35,7 +35,7 @@ type UserPassPair struct {
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
 		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Authors: \n"
-			for _,v := range block.Authors {
+			for _,v := range block.Users {
 				str += "     " + v + "\n"
 			}
 		str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
@@ -55,9 +55,9 @@ func InitialBlock(users []UserPassPair) Block {
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
 	initBlock.Transactions = make([]Transaction, 0)
-	initBlock.Authors = make([]string, len(users))
+	initBlock.Users = make([]string, len(users))
 	for i, v := range users {
-		initBlock.Authors[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
+		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
 	}
 	initBlock.PrevHash = ""
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
@@ -79,7 +79,7 @@ func calcHash(block Block) string {
 	for _, v := range block.Transactions {
 		record += v.ToString()
 	}
-	for _, v := range block.Authors {
+	for _, v := range block.Users {
 		record += v
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
@@ -101,7 +101,7 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) Block {
 	var authorized = false
 	var hash = transaction.Username + ":" + hashAuth(transaction.Username, transaction.Password)
 
-	for _, v := range oldBlock.Authors {
+	for _, v := range oldBlock.Users {
 		if v == hash {
 			authorized = true
 			break
@@ -119,7 +119,7 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) Block {
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
-	newBlock.Authors = oldBlock.Authors
+	newBlock.Users = oldBlock.Users
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Difficulty = oldBlock.Difficulty
 
