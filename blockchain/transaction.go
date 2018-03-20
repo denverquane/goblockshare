@@ -1,12 +1,12 @@
 package blockchain
 
-type TransType int
+type TransType string
 
-//const (
-//	ADD_MESSAGE TransType = iota
-//	DELETE_MESSAGE
-//	ADD_USER
-//)
+const (
+	ADD_MESSAGE TransType = "ADD_MESSAGE"
+	DELETE_MESSAGE = "DELETE_MESSAGE"
+	ADD_USER = "ADD_USER"
+)
 
 type AuthTransaction struct {
 	Username 		string

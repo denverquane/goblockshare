@@ -48,3 +48,9 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
 }
+
+func MakeInitialChain(users []UserPassPair) BlockChain {
+	chain := BlockChain{make([]Block, 1)}
+	chain.Blocks[0] = InitialBlock(users)
+	return chain
+}

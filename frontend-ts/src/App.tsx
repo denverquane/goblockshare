@@ -4,12 +4,11 @@ import {
   ListGroup,
   ListGroupItem,
   Table,
-  Alert,
 } from 'react-bootstrap';
 import './App.css';
 import { Transaction } from './Transaction';
 
-import { Button } from '@blueprintjs/core';
+import { Callout, Intent } from '@blueprintjs/core';
 
 const logo = require('./logo.svg');
 
@@ -68,14 +67,14 @@ export default class App extends React.Component<SampleProps, SampleState> {
           <Table condensed={true}>
             <thead>
               <tr>
-                <th>Author</th>
                 <th>Channel</th>
+                <th>Type</th>
                 <th>Message</th>
               </tr>
               <tr>
-                <td style={{ width: '10%' }}>{trans.Username}</td>
-                <td style={{ width: '10%' }}>{trans.Channel}</td>
-                <td style={{ width: '80%' }}>{trans.Message}</td>
+                <td style={{ width: '15%' }}>{trans.Channel}</td>
+                <td style={{ width: '15%' }}>{trans.TransactionType}</td>
+                <td style={{ width: '70%' }}>{trans.Message}</td>
               </tr>
             </thead>
           </Table>
@@ -112,8 +111,22 @@ export default class App extends React.Component<SampleProps, SampleState> {
                     <Table>
                       <thead>
                         <tr>
-                          <th style={{ width: '10%' }}>{block.Index}</th>
-                          <th style={{ width: '90%' }}>{block.Timestamp}</th>
+                          <th style={{ width: '10%' }}>
+                            <Callout icon={null} intent={Intent.PRIMARY}>
+                              {block.Index}
+                            </Callout></th>
+                          <th style={{ width: '90%' }}>
+                            <Callout
+                              icon={null}
+                              title={block.Transactions[0] 
+                                ? '\'' + block.Transactions[0].Username + '\' added on ' + block.Timestamp 
+                                : 'Chain created on' + block.Timestamp}
+                              intent={Intent.PRIMARY}
+                            >
+                              {/* <h5 class="pt-callout-title">Callout Heading</h5>
+                              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ex, delectus! */}
+                            </Callout>
+                          </th>
                         </tr>
                         {/* <ListGroup>{block.Transactions.reverse().map((trans: Transaction, index) => {
                               return <ListGroupItem>
@@ -127,7 +140,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
                             </ListGroup> */}
 
                         <tr>
-                          <td><div><Alert>Added</Alert></div></td>
+                          <td><Callout icon="new-object" intent={Intent.SUCCESS}>New</Callout></td>
                           <td>
                             <ListGroup>
                               <ListGroupItem>
@@ -142,33 +155,29 @@ export default class App extends React.Component<SampleProps, SampleState> {
                         </tr>
                         {(block.Transactions.length) > 0 ?
                           <tr>
+                            <td><Callout icon="history" intent={Intent.WARNING}>Old</Callout></td>
                             <td>
-                              <Button onClick={() => this.setState({ isOpen: !this.state.isOpen })}>
-                                {this.state.isOpen ? 'Hide' : 'Show'} Old Transactions
-                              </Button>
-                            </td>
-                            <td>
-                                <ListGroup>
-                                  {block.Transactions.reverse().map((trans: Transaction, index) => {
-                                    return ( this.state.isOpen ?
-                                      <ListGroupItem key={index}>
-                                        <div style={{ display: 'flex' }}>
-                                          <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
-                                        </div>
-                                      </ListGroupItem> : <ListGroupItem/>
-                                    );
-                                  }
-                                  )}
-                                </ListGroup>
+                              <ListGroup>
+                                {block.Transactions.reverse().map((trans: Transaction, index) => {
+                                  return (
+                                    <ListGroupItem key={index}>
+                                      <div style={{ display: 'flex' }}>
+                                        <div style={{ width: '90%' }}>{this.renderTransAsRow(trans)}</div>
+                                      </div>
+                                    </ListGroupItem>
+                                  );
+                                }
+                                )}
+                              </ListGroup>
                             </td>
                           </tr> : <tr />}
                       </thead>
                     </Table>
                   </div>
-                  <div style={{ display: 'flex' }}>
+                  {/* <div style={{ display: 'flex' }}>
                     <div style={{ width: '50%' }}><b>Hash: </b>{block.Hash} </div>
                     <div style={{ width: '50%' }}><b>PrevHash: </b>{block.PrevHash}</div>
-                  </div>
+                  </div> */}
                 </ListGroupItem>
                 )
               );

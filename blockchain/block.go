@@ -26,6 +26,11 @@ type Block struct {
 	Nonce		 string
 }
 
+type UserPassPair struct {
+	Username string
+	Password string
+}
+
 //ToString simply returns a human-legible representation of a Block in question
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
@@ -44,14 +49,16 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock(username, password string) Block {
+func InitialBlock(users []UserPassPair) Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
 	initBlock.Transactions = make([]Transaction, 0)
-	initBlock.Authors = make([]string, 1)
-	initBlock.Authors[0] = username + ":" + hashAuth(username, password)
+	initBlock.Authors = make([]string, len(users))
+	for i, v := range users {
+		initBlock.Authors[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
+	}
 	initBlock.PrevHash = ""
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
