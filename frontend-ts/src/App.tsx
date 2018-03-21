@@ -2,9 +2,15 @@ import * as React from 'react';
 
 import './App.css';
 import { Transaction } from './Transaction';
-import { ChainExplorer } from './ChainExplorer';
+import { ChainDisplay } from './BlockChain';
+import { Button, Toaster, Position, Intent } from '@blueprintjs/core';
 
 const logo = require('./logo.svg');
+
+const MyToaster = Toaster.create({
+  className: 'my-toaster',
+  position: Position.TOP
+});
 
 interface SampleProps {
 }
@@ -19,6 +25,7 @@ interface Block {
 
 interface SampleState {
   blocks: Block[];
+  users: string[];
 }
 
 export default class App extends React.Component<SampleProps, SampleState> {
@@ -28,39 +35,51 @@ export default class App extends React.Component<SampleProps, SampleState> {
 
     this.state = {
       blocks: [],
+      users: [],
     };
+    this.getBlocks = this.getBlocks.bind(this);
   }
-
+  
   componentDidMount() {
-    fetch('http://localhost:8040')
-      .then(results => {
-        return results.json();
-      }).then(data => {
-        let blocks = data.Blocks.map((block: Block) => {
-          return {
-            Index: block.Index,
-            Timestamp: block.Timestamp,
-            Transactions: block.Transactions.map((trans: Transaction) => {
-              return trans;
-            }),
-            Hash: block.Hash,
-            PrevHash: block.PrevHash
-          };
-        });
-        let newState = { blocks: blocks };
-        this.setState(newState);
-      });
+    this.getBlocks();
   }
 
   render() {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
+          <img src={logo} className="App-logo" alt="logo" onClick={this.getBlocks} />
           <h1 className="App-title">Welcome to React</h1>
         </header>
-        <ChainExplorer blocks={this.state.blocks}/>
+        <Button onClick={this.getBlocks}>Update</Button>
+        <ChainDisplay blocks={this.state.blocks} />
       </div>
     );
+  }
+
+  getBlocks() {
+    let handle = MyToaster.show({
+      message: 'Fetching data',
+      intent: Intent.PRIMARY,
+    });
+    fetch('http://localhost:8040/chain')
+    .then(results => {
+      return results.json();
+    }).then(data => {
+      let blocks = data.Blocks.map((block: Block) => {
+        return {
+          Index: block.Index,
+          Timestamp: block.Timestamp,
+          Transactions: block.Transactions.map((trans: Transaction) => {
+            return trans;
+          }),
+          Hash: block.Hash,
+          PrevHash: block.PrevHash
+        };
+      });
+      let newState = { ...this.state, blocks: blocks };
+      this.setState(newState);
+    });
+    MyToaster.dismiss(handle);
   }
 }

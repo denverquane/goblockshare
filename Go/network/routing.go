@@ -7,11 +7,11 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"encoding/json"
 	"io"
-	"chatProgram/blockchain"
 	"reflect"
 	"bufio"
 	"os"
 	"strings"
+	"chatProgram/Go/blockchain"
 )
 
 var globalChain* blockchain.BlockChain

@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"chatProgram/network"
 	"github.com/joho/godotenv"
+	"chatProgram/Go/network"
 )
 
 func main() {
-	err := godotenv.Load()
+	err := godotenv.Load("Go/.env")
 	if err != nil {
 		log.Fatal(err)
 	}

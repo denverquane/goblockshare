@@ -1,12 +1,12 @@
 package network
 
 import (
-	"chatProgram/blockchain"
 	"encoding/json"
 	"net/http"
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"chatProgram/Go/blockchain"
 )
 
 func BroadcastChain(url string, chain blockchain.BlockChain) {
