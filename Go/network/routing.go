@@ -11,7 +11,7 @@ import (
 	"bufio"
 	"os"
 	"strings"
-	"chatProgram/Go/blockchain"
+	"GoBlockChat/Go/blockchain"
 )
 
 var globalChain* blockchain.BlockChain

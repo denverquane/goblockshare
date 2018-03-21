@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"chatProgram/Go/blockchain"
+	"GoBlockChat/Go/blockchain"
 )
 
 func BroadcastChain(url string, chain blockchain.BlockChain) {

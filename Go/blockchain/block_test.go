@@ -1,8 +1,8 @@
 package blockchain
 
-import (
-	"testing"
-)
+//import (
+//	"testing"
+//)
 
 //func TestInitialBlock(t *testing.T) {
 //	block := InitialBlock(UserPassPair{"user"})
