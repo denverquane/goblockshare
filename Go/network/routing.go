@@ -7,7 +7,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"encoding/json"
 	"io"
-	"reflect"
 	"bufio"
 	"os"
 	"strings"
@@ -104,10 +103,10 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oldBlock := globalChain.GetNewestBlock()
-	newBlock := blockchain.GenerateBlock(oldBlock, m)
+	newBlock, err := blockchain.GenerateBlock(oldBlock, m)
 
-	if reflect.DeepEqual(oldBlock,newBlock) {
-		respondWithJSON(w, r, http.StatusUnauthorized, "User is not authorized to post")
+	if err != nil {
+		respondWithJSON(w, r, http.StatusUnauthorized, err.Error())
 		return
 	}
 	fmt.Println("New block:\n" + newBlock.ToString())

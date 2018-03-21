@@ -1,12 +1,12 @@
 package blockchain
 
-type TransType string
+type TransType int
 
-const (
-	ADD_MESSAGE TransType = "ADD_MESSAGE"
-	DELETE_MESSAGE = "DELETE_MESSAGE"
-	ADD_USER = "ADD_USER"
-)
+var ValidTransactionTypes = []string{
+	"ADD_MESSAGE",
+	"DELETE_MESSAGE",
+	"ADD_USER"}
+
 
 type AuthTransaction struct {
 	Username 		string
@@ -22,6 +22,28 @@ type Transaction struct {
 	Message         string
 	TransactionType string
 }
+
+func (trans AuthTransaction) IsValidType() bool {
+	for _,v := range ValidTransactionTypes {
+		if trans.TransactionType == v {
+			return true
+		}
+	}
+	return false
+}
+
+func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
+	var auth = trans.Username + ":" + hashAuth(trans.Username, trans.Password)
+
+	for _, v := range authUsers {
+		if auth == v {
+			return true
+		}
+	}
+
+	return false
+}
+
 
 func (trans AuthTransaction) RemovePassword() Transaction {
 	return Transaction{Username:trans.Username, Channel:trans.Channel,

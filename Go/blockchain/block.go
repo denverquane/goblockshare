@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"errors"
 )
 
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
@@ -97,21 +98,21 @@ func isHashValid(hash string, difficulty int) bool {
 //GenerateBlock accepts a "base" block to append to, and a transaction. The function
 //creates a new block from the base block, and appends the transaction to it (rehashing and updating
 //as necessary)
-func GenerateBlock(oldBlock Block, transaction AuthTransaction) Block {
-	var authorized = false
-	var hash = transaction.Username + ":" + hashAuth(transaction.Username, transaction.Password)
+func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
 
-	for _, v := range oldBlock.Users {
-		if v == hash {
-			authorized = true
-			break
-		}
-	}
-	if !authorized {
-		fmt.Println("User is not authorized!!!")
+	if !transaction.IsValidType(){
+		log.Println("Invalid transaction type supplied!!!")
 		fmt.Println("Retaining old block")
-		return oldBlock
+		return oldBlock, errors.New("Invalid type supplied")
 	}
+
+	if !transaction.IsAuthorized(oldBlock.Users) {
+		log.Println("User is not authorized!!!")
+		fmt.Println("Retaining old block")
+		return oldBlock, errors.New("User not authorized")
+	}
+
+
 	var newBlock Block
 
 	t := time.Now()
@@ -136,7 +137,7 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) Block {
 			break
 		}
 	}
-	return newBlock
+	return newBlock, nil
 }
 
 //IsBlockSequenceValid checks if an old block and a new block are capable of following one another;
