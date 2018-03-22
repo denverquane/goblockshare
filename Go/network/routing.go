@@ -29,8 +29,9 @@ func FetchOrMakeChain(router http.Handler) {
 
 	// TODO discover existing chain here, using router
 
-	users := make([]blockchain.UserPassPair, 1)
-	users[0] = blockchain.UserPassPair{"user", "pass"}
+	users := make([]blockchain.UserPassPair, 2)
+	users[0] = blockchain.UserPassPair{"admin", "pass"}
+	users[1] = blockchain.UserPassPair{"user1", "pass"}
 	chain := blockchain.MakeInitialChain(users)
 	globalChain = &chain
 }
