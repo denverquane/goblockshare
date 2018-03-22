@@ -3,15 +3,19 @@ import * as React from 'react';
 import './App.css';
 import { Transaction } from './Transaction';
 import { ChainDisplay } from './BlockChain';
-import { Button, Toaster, Position, Intent, Callout } from '@blueprintjs/core';
+import {
+  Button,
+  // Toaster, Position, 
+  Intent, Callout
+} from '@blueprintjs/core';
 
 const logo = require('./logo.svg');
-const IP = 'http://localhost:8040';
+const BACKEND_IP = 'http://localhost:8040';
 
-const MyToaster = Toaster.create({
-  className: 'my-toaster',
-  position: Position.TOP
-});
+// const MyToaster = Toaster.create({
+//   className: 'my-toaster',
+//   position: Position.TOP
+// });
 
 interface SampleProps {
 }
@@ -38,62 +42,53 @@ export default class App extends React.Component<SampleProps, SampleState> {
       blocks: [],
       users: [],
     };
-    this.getBlocksAndUsers = this.getBlocksAndUsers.bind(this);
+    this.getBlocks = this.getBlocks.bind(this);
+    this.getUsers = this.getUsers.bind(this);
   }
 
   componentDidMount() {
-    this.getBlocksAndUsers();
+    this.getUsers();
+    this.getBlocks();
   }
 
   render() {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" onClick={this.getBlocksAndUsers} />
+          <img src={logo} className="App-logo" alt="logo" />
         </header>
         <h1 className="App-title">Welcome to the GoBlockChat!</h1>
-        <Button onClick={this.getBlocksAndUsers}>Update</Button>
+        <Button intent={Intent.SUCCESS} onClick={this.getBlocks}>Update</Button>
         <div>{this.renderUsers()}</div>
         <ChainDisplay blocks={this.state.blocks} />
       </div>
     );
   }
 
-  getBlocksAndUsers() {
-    let handle = MyToaster.show({
-      message: 'Fetching data',
-      intent: Intent.PRIMARY,
-    });
-    fetch(IP + '/chain')
+  getBlocks() {
+    fetch(BACKEND_IP + '/chain')
       .then(results => {
         return results.json();
       }).then(data => {
         let blocks = data.Blocks.map((block: Block) => {
-          return {
-            Index: block.Index,
-            Timestamp: block.Timestamp,
-            Transactions: block.Transactions.map((trans: Transaction) => {
-              return trans;
-            }),
-            Hash: block.Hash,
-            PrevHash: block.PrevHash
-          };
+          return block;
         });
-        let newState = { ...this.state, blocks: blocks };
+        let newState = { blocks: blocks };
         this.setState(newState);
       });
-    fetch(IP + '/users')
+  }
+
+  getUsers() {
+    fetch(BACKEND_IP + '/users')
       .then(results => {
         return results.json();
       }).then(data => {
         let users = data.map((user: string) => {
-          return user.split(':')[0];
+          return user.split(':')[0]; // extract the name, not the hashed credentials
         });
-        let newState = { ...this.state, users: users };
+        let newState = { users: users };
         this.setState(newState);
       });
-
-    MyToaster.dismiss(handle);
   }
 
   renderUsers() {
