@@ -3,11 +3,14 @@ import * as React from 'react';
 import './App.css';
 import { Transaction } from './Transaction';
 import { ChainDisplay } from './BlockChain';
+import { InputTransaction } from './InputTransaction';
 import {
   Button,
   // Toaster, Position, 
-  Intent, Callout
+  Intent, Callout,
 } from '@blueprintjs/core';
+
+// import { Panel } from 'react-bootstrap';
 
 const logo = require('./logo.svg');
 const BACKEND_IP = 'http://localhost:8040';
@@ -31,6 +34,7 @@ interface Block {
 interface SampleState {
   blocks: Block[];
   users: string[];
+  openOverlay: boolean;
 }
 
 export default class App extends React.Component<SampleProps, SampleState> {
@@ -41,6 +45,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
     this.state = {
       blocks: [],
       users: [],
+      openOverlay: false,
     };
     this.getBlocks = this.getBlocks.bind(this);
     this.getUsers = this.getUsers.bind(this);
@@ -59,6 +64,16 @@ export default class App extends React.Component<SampleProps, SampleState> {
         </header>
         <h1 className="App-title">Welcome to the GoBlockChat!</h1>
         <Button intent={Intent.SUCCESS} onClick={this.getBlocks}>Update</Button>
+        <Button
+          onClick={() => {
+            this.setState({ openOverlay: true });
+          }}
+        >
+          Add Transaction
+        </Button>
+        <InputTransaction
+          isOverlayOpen={this.state.openOverlay}
+        />
         <div>{this.renderUsers()}</div>
         <ChainDisplay blocks={this.state.blocks} />
       </div>
@@ -66,7 +81,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
   }
 
   getBlocks() {
-    fetch(BACKEND_IP + '/chain')
+    fetch(BACKEND_IP + '/chain', { method: 'GET' })
       .then(results => {
         return results.json();
       }).then(data => {
