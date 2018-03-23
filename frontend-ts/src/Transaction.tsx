@@ -9,6 +9,14 @@ export interface Transaction {
   TransactionType: string;
 }
 
+export interface AuthTransaction {
+  Username: string;
+  Password: string;
+  Channel: string;
+  Message: string;
+  TransactionType: string;
+}
+
 interface TransactionProps {
   transaction: Transaction | undefined;
 }
@@ -77,7 +85,6 @@ export class TransactionDisplay extends React.Component<TransactionProps, Transa
         text = 'Add User';
         intent = Intent.SUCCESS;
         break;
-
       default:
         iconn = 'cross';
         text = 'INVALID';

@@ -12,15 +12,16 @@ import {
     Panel,
 } from 'react-bootstrap';
 
+import { AuthTransaction } from './Transaction';
+
 interface InputProps {
     isOverlayOpen: boolean;
+    BACKEND_IP: string;
+    onClose: () => void;
 }
 
 interface InputState {
-    isOverlayOpen: boolean;
-    username: string;
-    password: string;
-    message: string;
+    transaction: AuthTransaction;
 }
 
 export class InputTransaction extends React.Component<InputProps, InputState> {
@@ -29,52 +30,89 @@ export class InputTransaction extends React.Component<InputProps, InputState> {
         super(props);
 
         this.state = {
-            isOverlayOpen: this.props.isOverlayOpen,
-            username: 'username',
-            password: 'password',
-            message: 'message'
+            transaction: {
+                Username: 'username',
+                Password: 'password',
+                Channel: 'channel',
+                Message: 'message',
+                TransactionType: 'ADD_MESSAGE'
+            }
         };
     }
 
     componentWillReceiveProps(newProps: InputProps) {
-        this.setState(newProps);
+        this.props = newProps;
     }
 
     render() {
         return (
-            <Overlay isOpen={this.state.isOverlayOpen} >
+            <Overlay isOpen={this.props.isOverlayOpen} >
                 <Panel>
                     <div className={Classes.CARD}>
 
                         <h3>Please provide the details of the transaction you wish to post:</h3>
 
                         <EditableText
-                            placeholder={this.state.username}
+                            placeholder={this.state.transaction.Username}
                             confirmOnEnterKey={true}
                             onConfirm={(val: string) => {
-                                this.setState({ username: val });
+                                this.setState({
+                                    transaction: {
+                                        ...this.state.transaction,
+                                        Username: val
+                                    }
+                                });
                             }}
                         />
                         <EditableText
-                            placeholder={this.state.password}
+                            placeholder={this.state.transaction.Password}
                             confirmOnEnterKey={true}
                             onConfirm={(val: string) => {
-                                this.setState({ password: val });
+                                this.setState({
+                                    transaction: {
+                                        ...this.state.transaction,
+                                        Password: val
+                                    }
+                                });
                             }}
                         />
                         <EditableText
-                            placeholder={this.state.message}
+                            placeholder={this.state.transaction.Message}
                             confirmOnEnterKey={true}
                             onConfirm={(val: string) => {
-                                this.setState({ message: val });
+                                this.setState({
+                                    transaction: {
+                                        ...this.state.transaction,
+                                        Message: val
+                                    }
+                                });
                             }}
                         />
 
                         <Button
                             onClick={() => {
-                                /*tslint:disable*/
-                                console.log(this.state.username + " " + this.state.password + " " + this.state.message);
-                                /*tslint:enable*/
+                                fetch(this.props.BACKEND_IP + '/postTransaction', {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: {
+                                        'Access-Control-Allow-Origin': '*',
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(
+                                        this.state.transaction
+                                    )
+                                })
+                                    .then(results => {
+                                        return results;
+                                    }).then(data => {
+                                        // let blocks = data.Blocks.map((block: string) => {
+                                        //     return block;
+                                        // });
+                                        /*tslint:disable*/
+                                        console.log({ data });
+                                    });
+                                    this.props.onClose();
                             }}
                         >
                             Post Transaction
@@ -82,13 +120,11 @@ export class InputTransaction extends React.Component<InputProps, InputState> {
                         <Button
                             intent={Intent.DANGER}
                             onClick={() => {
-                                this.setState({ isOverlayOpen: !this.state.isOverlayOpen });
+                                this.props.onClose();
                             }}
-                        >
-                            Close
+                        >Close
                         </Button>
                     </div>
-
                 </Panel>
             </Overlay>
         );

@@ -36,7 +36,7 @@ export class ChainDisplay extends React.Component<ChainProps, ChainState> {
       <div>
         <ListGroup>
           {
-            this.props.blocks.reverse().map((block: Block) => {
+            this.props.blocks.map((block: Block) => {
               return (
                 (<ListGroupItem key={block.Index}>
                   <BlockDisplay

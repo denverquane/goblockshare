@@ -59,6 +59,14 @@ export default class App extends React.Component<SampleProps, SampleState> {
   render() {
     return (
       <div className="App">
+        <InputTransaction
+          isOverlayOpen={this.state.openOverlay}
+          BACKEND_IP={BACKEND_IP}
+          onClose={() => {
+            this.setState({ openOverlay: false });
+            this.getBlocks();
+          }}
+        />
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
         </header>
@@ -67,13 +75,10 @@ export default class App extends React.Component<SampleProps, SampleState> {
         <Button
           onClick={() => {
             this.setState({ openOverlay: true });
+            this.getBlocks();
           }}
-        >
-          Add Transaction
+        >Add Transaction 
         </Button>
-        <InputTransaction
-          isOverlayOpen={this.state.openOverlay}
-        />
         <div>{this.renderUsers()}</div>
         <ChainDisplay blocks={this.state.blocks} />
       </div>
@@ -81,14 +86,14 @@ export default class App extends React.Component<SampleProps, SampleState> {
   }
 
   getBlocks() {
-    fetch(BACKEND_IP + '/chain', { method: 'GET' })
+    fetch(BACKEND_IP + '/chain')
       .then(results => {
         return results.json();
       }).then(data => {
         let blocks = data.Blocks.map((block: Block) => {
           return block;
         });
-        let newState = { blocks: blocks };
+        let newState = { blocks: blocks.reverse()};
         this.setState(newState);
       });
   }
