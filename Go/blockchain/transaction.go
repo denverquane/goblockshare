@@ -1,12 +1,22 @@
 package blockchain
 
+import (
+
+)
+
 type TransType int
 
-var ValidTransactionTypes = []string{
-	"ADD_MESSAGE",
-	"DELETE_MESSAGE",
-	"ADD_USER"}
+const (
+	ADD_MESSAGE TransType = iota
+	DELETE_MESSAGE
+	ADD_USER
+)
 
+var ValidTransactionTypes = map[TransType]string{
+	ADD_MESSAGE : "ADD_MESSAGE",
+	DELETE_MESSAGE : "DELETE_MESSAGE",
+	ADD_USER: "ADD_USER",
+}
 
 type AuthTransaction struct {
 	Username 		string
@@ -44,6 +54,10 @@ func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 	return false
 }
 
+func (trans AuthTransaction) CensorAddUserTrans(userHash string) Transaction {
+	return Transaction{Username:trans.Username, Channel:"MGMT",
+		Message:userHash, TransactionType:trans.TransactionType}
+}
 
 func (trans AuthTransaction) RemovePassword() Transaction {
 	return Transaction{Username:trans.Username, Channel:trans.Channel,
@@ -54,8 +68,8 @@ func (trans Transaction) ToString() string {
 	return trans.Username + " posted \"" + trans.Message + "\" on the " + trans.Channel + " channel"
 }
 
-func SampleAuthTransaction() AuthTransaction {
-	return AuthTransaction{"user", "pass", "Test", "Sample message.", "ADD_MESSAGE"}
+func SampleAuthTransaction(user, pass string) AuthTransaction {
+	return AuthTransaction{user, pass, "Test", "Sample message.", "ADD_MESSAGE"}
 }
 
 func GetTransactionFormat() string {

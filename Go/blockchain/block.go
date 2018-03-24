@@ -35,7 +35,7 @@ type UserPassPair struct {
 //ToString simply returns a human-legible representation of a Block in question
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
-		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Authors: \n"
+		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Users: \n"
 			for _,v := range block.Users {
 				str += "     " + v + "\n"
 			}
@@ -112,15 +112,25 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
 		return oldBlock, errors.New("User not authorized")
 	}
 
-
 	var newBlock Block
-
 	t := time.Now()
-
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
-	newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
-	newBlock.Users = oldBlock.Users
+
+	if transaction.TransactionType == ValidTransactionTypes[ADD_USER] {
+		str, err := oldBlock.ValidateAddUser(transaction.Message)
+
+		if err != nil {
+			return oldBlock, err
+		}
+
+		newBlock.Users = append(newBlock.Users, str)
+		newBlock.Transactions = append(oldBlock.Transactions, transaction.CensorAddUserTrans(str))
+	} else {
+		newBlock.Users = oldBlock.Users
+		newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
+	}
+
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Difficulty = oldBlock.Difficulty
 
@@ -138,6 +148,25 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
 		}
 	}
 	return newBlock, nil
+}
+
+func (oldBlock Block) ValidateAddUser(message string) (string, error) {
+	strs := strings.Split(message, ":")
+	if len(strs) < 2 {
+		return "", errors.New("Parse error of user/pass in string: " + message)
+	}
+
+	user := strs[0]
+	pass := strs[1]
+
+	for _, v := range oldBlock.Users {
+		u := strings.Split(v, ":")[0]
+		if u == user {
+			return "", errors.New("User \"" + user + "\" is already registered!")
+		}
+	}
+
+	return user + ":" + hashAuth(user, pass), nil
 }
 
 //IsBlockSequenceValid checks if an old block and a new block are capable of following one another;

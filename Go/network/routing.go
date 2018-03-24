@@ -115,7 +115,7 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	if blockchain.IsBlockSequenceValid(newBlock, oldBlock) {
 		globalChain.Blocks = append(globalChain.Blocks, newBlock)
 		//Block = blockchain.CheckLongerChain(newBlock, Block)
-		fmt.Println("Successfully added: {" + m.RemovePassword().ToString() + "} to the chain")
+		//fmt.Println("Successfully added: {" + m.RemovePassword().ToString() + "} to the chain")
 		BroadcastToAllPeers(Peers, *globalChain)
 	}
 
