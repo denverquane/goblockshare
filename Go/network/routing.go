@@ -10,7 +10,7 @@ import (
 	"bufio"
 	"os"
 	"strings"
-	"GoBlockChat/Go/blockchain"
+	"github.com/denverquane/GoBlockChat/Go/blockchain"
 )
 
 var globalChain* blockchain.BlockChain

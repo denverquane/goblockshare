@@ -54,8 +54,8 @@ func (trans Transaction) ToString() string {
 	return trans.Username + " posted \"" + trans.Message + "\" on the " + trans.Channel + " channel"
 }
 
-func SampleTransaction() Transaction {
-	return Transaction{"samplehashhere", "Test", "Sample message.", "ADD_MESSAGE"}
+func SampleAuthTransaction() AuthTransaction {
+	return AuthTransaction{"user", "pass", "Test", "Sample message.", "ADD_MESSAGE"}
 }
 
 func GetTransactionFormat() string {

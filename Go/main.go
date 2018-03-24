@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 	"github.com/joho/godotenv"
-	"GoBlockChat/Go/network"
+	"github.com/denverquane/GoBlockChat/Go/network"
 )
 
 func main() {
