@@ -1,5 +1,6 @@
 # GoBlockChat
 [![GoDoc](https://godoc.org/github.com/denverquane/GoBlockChat?status.png)](https://godoc.org/github.com/denverquane/GoBlockChat)
+[![Build Status](https://travis-ci.org/denverquane/GoBlockChat.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockChat)
 
 This app seeks to demonstrate using blockchain tech. for a chat application like Slack or Discord.
 
