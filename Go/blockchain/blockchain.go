@@ -4,6 +4,9 @@ type BlockChain struct {
 	Blocks		[]Block
 }
 
+var ChannelTransMap = make(map[string][]UserTransaction)
+var IndexCounter = -1
+
 func (chain BlockChain) Len() int {
 	return len(chain.Blocks)
 }
@@ -53,4 +56,25 @@ func MakeInitialChain(users []UserPassPair) BlockChain {
 	chain := BlockChain{make([]Block, 1)}
 	chain.Blocks[0] = InitialBlock(users)
 	return chain
+}
+
+func (chain BlockChain) GenerateCollapsedChannelChat() map[string][]UserTransaction{
+	block := chain.GetNewestBlock()
+	if !(block.Index > int64(IndexCounter)) {
+		return ChannelTransMap //blocks haven't been updated, just return the old one
+	}
+
+	//TODO Update index, and only process the transactions not already processed in the map
+	for _, v := range block.Transactions {
+		if v.TransactionType != ValidTransactionTypes[ADD_USER] {
+			if _, ok := ChannelTransMap[v.Channel]; ok { // Is the entry (the channel name) found in the map?
+				ChannelTransMap[v.Channel] = append(ChannelTransMap[v.Channel], UserTransaction{v.Username, v.Message})
+				//if it's found, add the message to that channel
+			} else { //otherwise, make the channel in the map, and then add the transaction
+				ChannelTransMap[v.Channel] = make([]UserTransaction, 1)
+				ChannelTransMap[v.Channel][0] = UserTransaction{v.Username, v.Message}
+			}
+		}
+	}
+	return ChannelTransMap
 }

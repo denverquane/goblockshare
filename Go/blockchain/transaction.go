@@ -33,6 +33,11 @@ type Transaction struct {
 	TransactionType string
 }
 
+type UserTransaction struct {
+	Username		string
+	Message 		string
+}
+
 func (trans AuthTransaction) IsValidType() bool {
 	for _,v := range ValidTransactionTypes {
 		if trans.TransactionType == v {
@@ -55,7 +60,7 @@ func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 }
 
 func (trans AuthTransaction) CensorAddUserTrans(userHash string) Transaction {
-	return Transaction{Username:trans.Username, Channel:"MGMT",
+	return Transaction{Username:trans.Username, Channel:"",
 		Message:userHash, TransactionType:trans.TransactionType}
 }
 

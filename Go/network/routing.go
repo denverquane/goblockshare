@@ -119,6 +119,8 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 		BroadcastToAllPeers(Peers, *globalChain)
 	}
 
+	fmt.Println(globalChain.GenerateCollapsedChannelChat())
+
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 

@@ -124,7 +124,7 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
 			return oldBlock, err
 		}
 
-		newBlock.Users = append(newBlock.Users, str)
+		newBlock.Users = append(oldBlock.Users, str)
 		newBlock.Transactions = append(oldBlock.Transactions, transaction.CensorAddUserTrans(str))
 	} else {
 		newBlock.Users = oldBlock.Users
