@@ -1,7 +1,12 @@
 package blockchain
 
+import (
+	"sync"
+)
+
 type BlockChain struct {
 	Blocks		[]Block
+	mux 		sync.Mutex
 }
 
 var ChannelTransMap = make(map[string][]UserTransaction)
@@ -53,9 +58,15 @@ func (chain BlockChain) GetNewestBlock() Block {
 }
 
 func MakeInitialChain(users []UserPassPair) BlockChain {
-	chain := BlockChain{make([]Block, 1)}
+	chain := BlockChain{Blocks: make([]Block, 1)}
 	chain.Blocks[0] = InitialBlock(users)
 	return chain
+}
+
+func (chain BlockChain) AppendMissingBlocks (longerChain BlockChain) {
+	for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
+		chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
+	}
 }
 
 func (chain BlockChain) GenerateCollapsedChannelChat() map[string][]UserTransaction{

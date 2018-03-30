@@ -7,6 +7,7 @@ import (
 	"time"
 	"github.com/joho/godotenv"
 	"github.com/denverquane/GoBlockChat/Go/network"
+	"github.com/denverquane/GoBlockChat/Go/blockchain"
 )
 
 func main() {
@@ -32,12 +33,20 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	network.FetchOrMakeChain(muxx)
+	makeGlobalChain()
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func makeGlobalChain() {
+	users := make([]blockchain.UserPassPair, 2)
+	users[0] = blockchain.UserPassPair{"admin", "pass"}
+	users[1] = blockchain.UserPassPair{"user1", "pass"}
+	chain := blockchain.MakeInitialChain(users)
+	blockchain.SetGlobalChain(chain)
 }
 
