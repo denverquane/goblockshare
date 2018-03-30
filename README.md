@@ -13,8 +13,14 @@ regarding "rewinding" or rollback of chat engagements.
   - [X] Basic difficulty/cryptographic proof validation
   - [ ] Scaling difficulty of blocks as the chain grows
   - [ ] Rewards for propagating the chain (?)
-- [ ] Automatic discovery of other Nodes, and auto propagation of the blockchain itself
-- [X] Author/poster validation (login validation)
+- [ ] Node discovery
+  - [ ] Ability to run app as a node registry/lookup
+  - [ ] Active central registry for node lookup
+  - [ ] Automatically propagate chain changes to other nodes
+  - [ ] Consensus algo. for chain conflicts (explore merging non-conflicting message types/re-generation of transaction)
+- [ ] Author/poster validation (login validation)
+  - [X] Basic authentication
+  - [ ] Secure authentication (explore security/abuse vulnerabilities)
 - [X] Basic JS Frontend for viewing the blockchain in realtime
 - [ ] JS Frontend for posting, deleting, editing, etc. messages and transactions
 - [ ] GO app to interact with the chain, without the Webapp (?)
@@ -29,5 +35,5 @@ In the aptly-named "Go" directory are all the [GoLang](https://golang.org/) sour
 - #### Ts/React Frontend
 See [ReactBlockChat](https://github.com/denverquane/ReactBlockChat)
 
-- ### GO Gui/"Frontend"
+- #### GO GUI/"Frontend"
 Planned for development, see Goals

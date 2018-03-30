@@ -1,18 +1,21 @@
 package blockchain
 
 import (
-
+	"strings"
+	"errors"
 )
 
 type TransType int
 
 const (
-	ADD_MESSAGE TransType = iota
+	TEST TransType = iota
+	ADD_MESSAGE
 	DELETE_MESSAGE
 	ADD_USER
 )
 
 var ValidTransactionTypes = map[TransType]string{
+	TEST : "TEST",
 	ADD_MESSAGE : "ADD_MESSAGE",
 	DELETE_MESSAGE : "DELETE_MESSAGE",
 	ADD_USER: "ADD_USER",
@@ -23,7 +26,7 @@ type AuthTransaction struct {
 	Password		string
 	Channel 		string
 	Message 		string
-	TransactionType	string
+	TransactionType	string // deliberately a string instead of Transtype; web transactions vs. interna
 }
 
 type Transaction struct {
@@ -47,6 +50,8 @@ func (trans AuthTransaction) IsValidType() bool {
 	return false
 }
 
+// IsAuthorized verifies that the transaction is being posted by a user who is found in the list
+// of authorized users
 func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 	var auth = trans.Username + ":" + hashAuth(trans.Username, trans.Password)
 
@@ -59,11 +64,29 @@ func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 	return false
 }
 
-func (trans AuthTransaction) CensorAddUserTrans(userHash string) Transaction {
-	return Transaction{Username:trans.Username, Channel:"",
-		Message:userHash, TransactionType:trans.TransactionType}
+func (trans AuthTransaction) VerifyAndFormatAddUserTrans(oldBlock Block) (Transaction, error) {
+	strs := strings.Split(trans.Message, ":")
+	if len(strs) < 2 {
+		return Transaction{}, errors.New("Parse error of user/pass in string: " + trans.Message)
+	}
+
+	user := strs[0]
+	pass := strs[1]
+
+	for _, v := range oldBlock.Users {
+		u := strings.Split(v, ":")[0]
+		if u == user {
+			return Transaction{}, errors.New("User \"" + user + "\" is already registered!")
+		}
+	}
+
+	strippedTrans := trans.RemovePassword()
+	strippedTrans.Message = user + ":" + hashAuth(user, pass)
+	return strippedTrans, nil
 }
 
+// RemovePassword takes an authorized transaction and converts it to a standard transaction,
+// so it can be securely posted to the blockchain without posting a plaintext authorization
 func (trans AuthTransaction) RemovePassword() Transaction {
 	return Transaction{Username:trans.Username, Channel:trans.Channel,
 		Message:trans.Message, TransactionType:trans.TransactionType}
@@ -74,7 +97,7 @@ func (trans Transaction) ToString() string {
 }
 
 func SampleAuthTransaction(user, pass string) AuthTransaction {
-	return AuthTransaction{user, pass, "Test", "Sample message.", "ADD_MESSAGE"}
+	return AuthTransaction{user, pass, "Test", "Sample message.", "TEST"}
 }
 
 func GetTransactionFormat() string {

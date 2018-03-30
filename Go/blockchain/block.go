@@ -118,14 +118,14 @@ func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
 	newBlock.Timestamp = t.Format(time.RFC1123)
 
 	if transaction.TransactionType == ValidTransactionTypes[ADD_USER] {
-		str, err := oldBlock.ValidateAddUser(transaction.Message)
+		trans, err := transaction.VerifyAndFormatAddUserTrans(oldBlock)
 
 		if err != nil {
 			return oldBlock, err
 		}
 
-		newBlock.Users = append(oldBlock.Users, str)
-		newBlock.Transactions = append(oldBlock.Transactions, transaction.CensorAddUserTrans(str))
+		newBlock.Users = append(oldBlock.Users, trans.Message)
+		newBlock.Transactions = append(oldBlock.Transactions, trans)
 	} else {
 		newBlock.Users = oldBlock.Users
 		newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
