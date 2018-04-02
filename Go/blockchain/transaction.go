@@ -96,6 +96,11 @@ func (trans Transaction) ToString() string {
 	return trans.Username + " posted \"" + trans.Message + "\" on the " + trans.Channel + " channel"
 }
 
+func (trans AuthTransaction) ToString() string {
+	return trans.Username + " w/ pass: " + trans.Password + " posted " + trans.TransactionType + " type to " +
+		trans.Channel + " w/ message: " + trans.Message
+}
+
 func SampleAuthTransaction(user, pass string) AuthTransaction {
 	return AuthTransaction{user, pass, "Test", "Sample message.", "TEST"}
 }

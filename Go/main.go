@@ -23,6 +23,7 @@ func run() error {
 	muxx := network.MakeMuxRouter()
 
 	httpAddr := os.Getenv("PORT")
+	version := os.Getenv("VERSION")
 	log.Println("Listening on ", os.Getenv("PORT"))
 
 	s := &http.Server{
@@ -33,7 +34,7 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	makeGlobalChain()
+	makeGlobalChain(version)
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -42,11 +43,11 @@ func run() error {
 	return nil
 }
 
-func makeGlobalChain() {
+func makeGlobalChain(version string) {
 	users := make([]blockchain.UserPassPair, 2)
 	users[0] = blockchain.UserPassPair{"admin", "pass"}
 	users[1] = blockchain.UserPassPair{"user1", "pass"}
-	chain := blockchain.MakeInitialChain(users)
+	chain := blockchain.MakeInitialChain(users, version)
 	blockchain.SetGlobalChain(chain)
 }
 

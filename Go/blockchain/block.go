@@ -50,7 +50,7 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock(users []UserPassPair) Block {
+func InitialBlock(users []UserPassPair, version string) Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
@@ -60,7 +60,7 @@ func InitialBlock(users []UserPassPair) Block {
 	for i, v := range users {
 		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
 	}
-	initBlock.PrevHash = ""
+	initBlock.PrevHash = "GoBlockChat Version: " + version
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
@@ -95,58 +95,67 @@ func isHashValid(hash string, difficulty int) bool {
 	return strings.HasPrefix(hash, prefix)
 }
 
-//GenerateBlock accepts a "base" block to append to, and a transaction. The function
-//creates a new block from the base block, and appends the transaction to it (rehashing and updating
-//as necessary)
-func GenerateBlock(oldBlock Block, transaction AuthTransaction) (Block, error) {
-
-	if !transaction.IsValidType(){
-		log.Println("Invalid transaction type supplied!!!")
-		fmt.Println("Retaining old block")
-		return oldBlock, errors.New("Invalid type supplied")
-	}
-
-	if !transaction.IsAuthorized(oldBlock.Users) {
-		log.Println("User is not authorized!!!")
-		fmt.Println("Retaining old block")
-		return oldBlock, errors.New("User not authorized")
-	}
+//GenerateBlock expects a "base" block to append transactions to, and thus "mining" a new block that contains these
+//transactions. The difficulty in mining this new block is proportional to the number of transactions being added,
+//and the more users that are registered to a channel results in a higher difficulty for mining transactions
+func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error) {
 
 	var newBlock Block
 	t := time.Now()
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
+	newBlock.Users = oldBlock.Users
+	newBlock.Difficulty = oldBlock.Difficulty
+	newBlock.PrevHash = oldBlock.Hash
 
-	if transaction.TransactionType == ValidTransactionTypes[ADD_USER] {
-		trans, err := transaction.VerifyAndFormatAddUserTrans(oldBlock)
-
-		if err != nil {
-			return oldBlock, err
+	for _, t := range transactions {
+		if !t.IsValidType(){
+			log.Println("Invalid transaction type supplied!!!")
+			log.Println(t.ToString())
+			fmt.Println("Retaining old block")
+			return oldBlock, errors.New("Invalid type supplied")
 		}
 
-		newBlock.Users = append(oldBlock.Users, trans.Message)
-		newBlock.Transactions = append(oldBlock.Transactions, trans)
-	} else {
-		newBlock.Users = oldBlock.Users
-		newBlock.Transactions = append(oldBlock.Transactions, transaction.RemovePassword())
+		if !t.IsAuthorized(oldBlock.Users) {
+			log.Println("User is not authorized!!!")
+			log.Println(t.ToString())
+			fmt.Println("Retaining old block")
+			return oldBlock, errors.New("User not authorized")
+		}
+
+		if t.TransactionType == ValidTransactionTypes[ADD_USER] {
+			cleanTrans, err := t.VerifyAndFormatAddUserTrans(oldBlock)
+
+			if err != nil {
+				return oldBlock, err
+			}
+
+			newBlock.Users = append(newBlock.Users, cleanTrans.Message)
+			newBlock.Transactions = append(newBlock.Transactions, cleanTrans)
+			newBlock.Difficulty += 1 // The larger a user list becomes, the harder it should become to post messages
+		} else {
+			newBlock.Transactions = append(newBlock.Transactions, t.RemovePassword())
+		}
 	}
 
-	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Difficulty = oldBlock.Difficulty
-
+	hashTime := time.Now()
 	for i := 0; ; i++ {
 		hexx := fmt.Sprintf("%x", i)
 		newBlock.Nonce = hexx
 		hash := calcHash(newBlock)
 
-		if !isHashValid(hash, newBlock.Difficulty) {
-			fmt.Println("Do more work: " + hash)
+		if !isHashValid(hash, newBlock.Difficulty * len(transactions)) { // difficulty is prop. to the # of transactions
+			//fmt.Println("Do more work: " + hash)
 			continue
 		} else {
 			newBlock.Hash = hash
 			break
 		}
 	}
+	endTime := time.Now()
+	fmt.Println("Took " + strconv.Itoa(endTime.Second() - hashTime.Second()) + " seconds to mine with diff=" +
+		strconv.Itoa(newBlock.Difficulty * len(transactions)))
+
 	return newBlock, nil
 }
 
