@@ -22,7 +22,9 @@ regarding "rewinding" or rollback of chat engagements.
   - [X] Basic authentication
   - [ ] Secure authentication (explore security/abuse vulnerabilities)
   - [ ] Permission tiers?
-- [ ] Ensure users are running an unmodified version of the app and source code (hash .src files, and only accept blocks from apps that match?)
+- [ ] Ensure users are running the same program version
+  - [X] Hash source code to ensure no modifications to versions
+  - [ ] Only accept/transmit to nodes with the same version
 - [X] Basic JS Frontend for viewing the blockchain in realtime
 - [ ] JS Frontend for posting, deleting, editing, etc. messages and transactions
 - [ ] GO app to interact with the chain, without the Webapp (?)
