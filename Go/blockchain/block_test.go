@@ -5,16 +5,16 @@ import (
 )
 
 func TestInitialBlock(t *testing.T) {
-	block := InitialBlock(nil)
+	block := InitialBlock(nil, "")
 
-	if block.Index != 0 || block.PrevHash != "" || calcHash(block) != block.Hash{
+	if block.Index != 0  || calcHash(block) != block.Hash{
 		t.Fail()
 	}
 }
 
 func TestIsBlockSequenceValid(t *testing.T) {
-	block := InitialBlock(nil)
-	failBlock := InitialBlock(nil)
+	block := InitialBlock(nil, "")
+	failBlock := InitialBlock(nil, "")
 
 	if IsBlockSequenceValid(block, failBlock) {
 		t.Fail()
@@ -43,8 +43,8 @@ func TestIsBlockSequenceValid(t *testing.T) {
 func TestGenerateBlock(t *testing.T) {
 	array := make([]UserPassPair, 1)
 	array[0] = UserPassPair{"user", "pass"}
-	block := InitialBlock(array)
-	newBlock, _ := GenerateBlock(block, SampleAuthTransaction("user", "pass"))
+	block := InitialBlock(array, "")
+	newBlock, _ := GenerateBlock(block, []AuthTransaction{SampleAuthTransaction("user", "pass")})
 
 	if !IsBlockSequenceValid(newBlock, block) {
 		t.Fail()
