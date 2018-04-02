@@ -63,9 +63,13 @@ func MakeInitialChain(users []UserPassPair, version string) BlockChain {
 	return chain
 }
 
+//AppendMissingBlocks takes a chain, and appends all the transactions that are found on a longer chain to it
+//This is handy when using a single Global chain that should never be entirely replaced; only appended to
 func (chain BlockChain) AppendMissingBlocks (longerChain BlockChain) {
-	for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
-		chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
+	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid(){
+		for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
+			chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
+		}
 	}
 }
 

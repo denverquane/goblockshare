@@ -159,6 +159,8 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 	return newBlock, nil
 }
 
+//ValidateAddUser ensures that the message provided not only matches the correct format for adding a user,
+//but also doesn't contain an entry for adding a user that already exists
 func (oldBlock Block) ValidateAddUser(message string) (string, error) {
 	strs := strings.Split(message, ":")
 	if len(strs) < 2 {

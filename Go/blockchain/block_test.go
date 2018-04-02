@@ -37,7 +37,6 @@ func TestIsBlockSequenceValid(t *testing.T) {
 	if !IsBlockSequenceValid(failBlock, block) {
 		t.Fail()
 	}
-
 }
 
 func TestGenerateBlock(t *testing.T) {
