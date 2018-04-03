@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/denverquane/GoBlockChat/Go/blockchain"
-	"github.com/denverquane/GoBlockChat/Go/network"
+	"github.com/denverquane/GoBlockShare/Go/blockchain"
+	"github.com/denverquane/GoBlockShare/Go/network"
 	"github.com/joho/godotenv"
 	"hash"
 	"io"
@@ -70,11 +70,11 @@ func hashDirectory(dir string) string {
 		fmt.Print(err)
 	}
 
-	hash := sha256.New()
+	h := sha256.New()
 	for _, v := range b {
-		hash = recursivelyHashFiles(hash, v, dir+"/")
+		h = recursivelyHashFiles(h, v, dir+"/")
 	}
-	return (string)(hash.Sum(nil))
+	return (string)(h.Sum(nil))
 }
 
 func recursivelyHashFiles(hasher hash.Hash, info os.FileInfo, path string) hash.Hash {

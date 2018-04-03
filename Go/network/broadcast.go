@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/denverquane/GoBlockChat/Go/blockchain"
+	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"io/ioutil"
 	"net/http"
 )
