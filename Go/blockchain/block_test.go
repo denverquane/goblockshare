@@ -7,7 +7,7 @@ import (
 func TestInitialBlock(t *testing.T) {
 	block := InitialBlock(nil, "")
 
-	if block.Index != 0  || calcHash(block) != block.Hash{
+	if block.Index != 0 || calcHash(block) != block.Hash {
 		t.Fail()
 	}
 }

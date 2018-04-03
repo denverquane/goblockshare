@@ -3,37 +3,38 @@ package blockchain
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"log"
 )
 
-var globalChain* BlockChain = nil
-var Peers []string = nil
+var globalChains = make(map[string]*BlockChain)
 
-func SetGlobalChain(chain BlockChain) {
-	if globalChain == nil {
-		globalChain = &chain
+func SetChannelChain(channel string, chain BlockChain) {
+	if _, ok := globalChains[channel]; ok == false {
+		globalChains[channel] = &chain
+		log.Println("Added \"" + channel + "\" channel")
 	} else {
 		fmt.Println("Tried to set the globalchain when one is already set...")
 	}
 }
 
-func GetChainByValue() BlockChain {
-	return *globalChain
+func GetChainByValue(channel string) BlockChain {
+	return *globalChains[channel]
 }
 
-func CheckReplacementChain(newChain BlockChain) (BlockChain, error) {
-	var thisChain = GetChainByValue()
+func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, error) {
+	var thisChain = GetChainByValue(channel)
 
 	if newChain.IsValid() {
 
 		if newChain.Len() > thisChain.Len() {
 			if AreChainsSameBranch(thisChain, newChain) {
-				globalChain.mux.Lock()
+				globalChains[channel].mux.Lock()
 
-				globalChain.AppendMissingBlocks(newChain)
+				globalChains[channel].AppendMissingBlocks(newChain)
 
-				globalChain.mux.Unlock()
+				globalChains[channel].mux.Unlock()
 
-				return *globalChain, nil
+				return *globalChains[channel], nil
 			} else {
 				return thisChain, errors.New("Chains are of different branches, keeping mine!")
 			}
@@ -45,8 +46,8 @@ func CheckReplacementChain(newChain BlockChain) (BlockChain, error) {
 	}
 }
 
-func WriteTransaction(trans AuthTransaction) (BlockChain, error) {
-	var thisChain = GetChainByValue()
+func WriteTransaction(channel string, trans AuthTransaction) (BlockChain, error) {
+	var thisChain = GetChainByValue(channel)
 
 	if trans.TransactionType == "" || trans.Message == "" {
 		return thisChain, errors.New("Supply transaction in this format: " + GetTransactionFormat())
@@ -62,11 +63,10 @@ func WriteTransaction(trans AuthTransaction) (BlockChain, error) {
 	fmt.Println("New block:\n" + newBlock.ToString())
 
 	if IsBlockSequenceValid(newBlock, oldBlock) {
-		globalChain.mux.Lock()
-		globalChain.Blocks = append(globalChain.Blocks, newBlock)
-		globalChain.mux.Unlock()
-		fmt.Println(globalChain.GenerateCollapsedChannelChat())
-		return *globalChain, nil
+		globalChains[channel].mux.Lock()
+		globalChains[channel].Blocks = append(globalChains[channel].Blocks, newBlock)
+		globalChains[channel].mux.Unlock()
+		return *globalChains[channel], nil
 		//Block = blockchain.CheckLongerChain(newBlock, Block)
 		//fmt.Println("Successfully added: {" + m.RemovePassword().ToString() + "} to the chain")
 		//BroadcastToAllPeers(Peers, *globalChain)
@@ -74,8 +74,3 @@ func WriteTransaction(trans AuthTransaction) (BlockChain, error) {
 		return thisChain, errors.New("Block sequence invalid somehow...")
 	}
 }
-
-
-
-
-

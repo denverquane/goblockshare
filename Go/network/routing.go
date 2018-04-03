@@ -1,37 +1,41 @@
 package network
 
 import (
-	"net/http"
-	"github.com/gorilla/mux"
-	"fmt"
 	"encoding/json"
-	"io"
+	"fmt"
 	"github.com/denverquane/GoBlockChat/Go/blockchain"
+	"github.com/gorilla/mux"
+	"io"
+	"net/http"
 )
 
 func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/chain", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/users", handleGetUsers).Methods("GET")
-	muxRouter.HandleFunc("/postTransaction", handleWriteTransaction).Methods("POST")
-	muxRouter.HandleFunc("/chain", handleChainUpdate).Methods("POST")
+	muxRouter.HandleFunc("/{channel}/chain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/{channel}/users", handleGetUsers).Methods("GET")
+	muxRouter.HandleFunc("/{channel}/postTransaction", handleWriteTransaction).Methods("POST")
+	muxRouter.HandleFunc("/{channel}/chain", handleChainUpdate).Methods("POST")
 	return muxRouter
 }
 
-func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
-	data, err := json.MarshalIndent(blockchain.GetChainByValue(), "", "  ")
+func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	data, err := json.MarshalIndent(blockchain.GetChainByValue(vars["channel"]), "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	fmt.Println("GET")
-	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	io.WriteString(w, string(data))
 }
 
 func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
 	var m blockchain.BlockChain
 
 	decoder := json.NewDecoder(r.Body)
@@ -41,7 +45,7 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	chain, err := blockchain.CheckReplacementChain(m)
+	chain, err := blockchain.CheckReplacementChain(vars["channel"], m)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -57,6 +61,8 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
 	var m blockchain.AuthTransaction
 
 	decoder := json.NewDecoder(r.Body)
@@ -66,7 +72,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	newChain, err := blockchain.WriteTransaction(m)
+	newChain, err := blockchain.WriteTransaction(vars["channel"], m)
 
 	if err != nil {
 		respondWithJSON(w, r, http.StatusBadRequest, err.Error())
@@ -77,7 +83,9 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetUsers(w http.ResponseWriter, r *http.Request) {
-	var chain = blockchain.GetChainByValue()
+	vars := mux.Vars(r)
+
+	var chain = blockchain.GetChainByValue(vars["channel"])
 	authors := chain.GetNewestBlock().Users
 	data, err := json.MarshalIndent(authors, "", "  ")
 	if err != nil {
@@ -85,7 +93,7 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("GET")
-	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	io.WriteString(w, string(data))
@@ -99,7 +107,7 @@ func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload i
 		return
 	}
 	w.WriteHeader(code)
-	w.Header().Set(	"Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	w.Write(response)
