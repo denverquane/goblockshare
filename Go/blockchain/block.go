@@ -60,7 +60,7 @@ func InitialBlock(users []UserPassPair, version string) Block {
 	for i, v := range users {
 		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
 	}
-	initBlock.PrevHash = "GoBlockChat Version: " + version
+	initBlock.PrevHash = "GoBlockShare Version: " + version
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
@@ -123,7 +123,7 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 			return oldBlock, errors.New("User not authorized")
 		}
 
-		if t.TransactionType == ValidTransactionTypes[ADD_USER] {
+		if t.TransactionType == "ADD_USER" {
 			cleanTrans, err := t.VerifyAndFormatAddUserTrans(oldBlock)
 
 			if err != nil {
@@ -158,6 +158,12 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 
 	return newBlock, nil
 }
+
+//func (block Block) interpretMessageAndApplyBehavior(transType TransType) Block {
+//	if transType == ADD_USER {
+//
+//	}
+//}
 
 //ValidateAddUser ensures that the message provided not only matches the correct format for adding a user,
 //but also doesn't contain an entry for adding a user that already exists

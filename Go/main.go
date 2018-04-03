@@ -34,7 +34,7 @@ func run() error {
 	httpAddr := os.Getenv("PORT")
 	version := os.Getenv("VERSION")
 	h := hashDirectory("./Go")
-	fmt.Printf("GoBlockChat Version: " + version + ", Checksum: %x\n", h)
+	fmt.Printf("GoBlockShare Version: " + version + ", Checksum: %x\n", h)
 
 	muxx := network.MakeMuxRouter()
 
@@ -64,8 +64,6 @@ func makeGlobalChain(version string) {
 	chain := blockchain.MakeInitialChain(users, version)
 	blockchain.SetGlobalChain(chain)
 }
-
-var HashIgnoreFiles = [...]string{".idea", ".git", }
 
 func hashDirectory(dir string) string {
 	b, err := ioutil.ReadDir(dir)

@@ -10,15 +10,17 @@ type TransType int
 const (
 	TEST TransType = iota
 	ADD_MESSAGE
+	ADD_FILE
 	DELETE_MESSAGE
 	ADD_USER
 )
 
-var ValidTransactionTypes = map[TransType]string{
-	TEST : "TEST",
-	ADD_MESSAGE : "ADD_MESSAGE",
-	DELETE_MESSAGE : "DELETE_MESSAGE",
-	ADD_USER: "ADD_USER",
+var ValidTransactionTypes = map[string]TransType{
+	"TEST" : TEST,
+	"ADD_MESSAGE" : ADD_MESSAGE,
+	"ADD_FILE" : ADD_FILE,
+	"DELETE_MESSAGE" : DELETE_MESSAGE,
+	"ADD_USER" : ADD_USER,
 }
 
 type AuthTransaction struct {
@@ -26,14 +28,14 @@ type AuthTransaction struct {
 	Password		string
 	Channel 		string
 	Message 		string
-	TransactionType	string // deliberately a string instead of Transtype; web transactions vs. interna
+	TransactionType	string
 }
 
 type Transaction struct {
 	Username        string
 	Channel         string
 	Message         string
-	TransactionType string
+	TransactionType TransType
 }
 
 type UserTransaction struct {
@@ -42,8 +44,8 @@ type UserTransaction struct {
 }
 
 func (trans AuthTransaction) IsValidType() bool {
-	for _,v := range ValidTransactionTypes {
-		if trans.TransactionType == v {
+	for i,_ := range ValidTransactionTypes {
+		if trans.TransactionType == i {
 			return true
 		}
 	}
@@ -89,7 +91,7 @@ func (trans AuthTransaction) VerifyAndFormatAddUserTrans(oldBlock Block) (Transa
 // so it can be securely posted to the blockchain without posting a plaintext authorization
 func (trans AuthTransaction) RemovePassword() Transaction {
 	return Transaction{Username:trans.Username, Channel:trans.Channel,
-		Message:trans.Message, TransactionType:trans.TransactionType}
+		Message:trans.Message, TransactionType:ValidTransactionTypes[trans.TransactionType]}
 }
 
 func (trans Transaction) ToString() string {

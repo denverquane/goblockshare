@@ -53,7 +53,7 @@ func WriteTransaction(trans AuthTransaction) (BlockChain, error) {
 	}
 
 	oldBlock := thisChain.GetNewestBlock()
-	newBlock, err := GenerateBlock(oldBlock, []AuthTransaction{trans, trans, trans, trans})
+	newBlock, err := GenerateBlock(oldBlock, []AuthTransaction{trans})
 
 	if err != nil {
 		return thisChain, err

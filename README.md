@@ -1,6 +1,6 @@
-# GoBlockChat
-[![GoDoc](https://godoc.org/github.com/denverquane/GoBlockChat?status.png)](https://godoc.org/github.com/denverquane/GoBlockChat)
-[![Build Status](https://travis-ci.org/denverquane/GoBlockChat.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockChat)
+# GoBlockShare
+[![GoDoc](https://godoc.org/github.com/denverquane/GoBlockShare?status.png)](https://godoc.org/github.com/denverquane/GoBlockShare)
+[![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
 
 This app seeks to demonstrate using blockchain tech. for a chat application like Slack or Discord.
 
@@ -34,10 +34,13 @@ This app is comprised of two distinct parts as of 3/30/18.
 These parts serve as the frontend and backend services for the overarching application.
 
 - #### GO Backend
-In the aptly-named "Go" directory are all the [GoLang](https://golang.org/) source files, which run the backend application that handles blockchain operations, including peer discovery/chain propagation, author and user validation, and rudimentary ["Proof of Work"](https://en.wikipedia.org/wiki/Proof-of-work_system) calculations to ensure users don't overwhelm blockchain peers with transactions.
+In the aptly-named "Go" directory are all the [GoLang](https://golang.org/) source files, which run the backend
+application that handles blockchain operations, including peer discovery/chain propagation, author and user validation,
+and rudimentary ["Proof of Work"](https://en.wikipedia.org/wiki/Proof-of-work_system) calculations to ensure users don't
+overwhelm blockchain peers with transactions.
 
 - #### Ts/React Frontend
-See [ReactBlockChat](https://github.com/denverquane/ReactBlockChat)
+See [ReactBlockShare](https://github.com/denverquane/ReactBlockShare)
 
 - #### GO GUI/"Frontend"
 Planned for development, see Goals

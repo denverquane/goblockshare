@@ -81,9 +81,10 @@ func (chain BlockChain) GenerateCollapsedChannelChat() map[string][]UserTransact
 
 	//TODO Update index, and only process the transactions not already processed in the map
 	for _, v := range block.Transactions {
-		if v.TransactionType != ValidTransactionTypes[ADD_USER] {
+		if v.TransactionType != ADD_USER {
 			if _, ok := ChannelTransMap[v.Channel]; ok { // Is the entry (the channel name) found in the map?
 				ChannelTransMap[v.Channel] = append(ChannelTransMap[v.Channel], UserTransaction{v.Username, v.Message})
+				//if it's found, add the message to that channel
 				//if it's found, add the message to that channel
 			} else { //otherwise, make the channel in the map, and then add the transaction
 				ChannelTransMap[v.Channel] = make([]UserTransaction, 1)

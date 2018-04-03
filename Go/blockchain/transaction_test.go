@@ -28,7 +28,7 @@ func TestAuthTransaction_RemovePassword(t *testing.T)  {
 		t.Fail()
 	}
 
-	if trans.TransactionType != aTrans.TransactionType {
+	if trans.TransactionType != ValidTransactionTypes[aTrans.TransactionType] {
 		t.Fail()
 	}
 
