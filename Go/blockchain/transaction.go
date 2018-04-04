@@ -25,6 +25,9 @@ var ValidTransactionTypes = map[string]TransType{
 	"CREATE_CHANNEL": CREATE_CHANNEL,
 }
 
+// AuthTransaction represents a transaction posted with credentials supplied, such as from a web UI or POST request.
+// This sort of transaction is identical to the more general "Transaction", except that the transactiontype is a string
+// (so that it can be supplied externally), and the Password is expected to be hashed/removed before posted to the chain
 type AuthTransaction struct {
 	Username        string
 	Password        string
@@ -32,6 +35,9 @@ type AuthTransaction struct {
 	TransactionType string
 }
 
+// Transaction represents a more generic version of the "AuthTransaction", and is a datatype intended for internal
+// processing, and posting to the blockchain (it doesn't contain a password that could be compromised by posting to the
+// chain).
 type Transaction struct {
 	Username        string
 	Message         string
@@ -43,6 +49,7 @@ type UserTransaction struct {
 	Message  string
 }
 
+// Ensures that the transaction is one of the registered transaction types
 func (trans AuthTransaction) IsValidType() bool {
 	for i, _ := range ValidTransactionTypes {
 		if trans.TransactionType == i {
@@ -53,7 +60,7 @@ func (trans AuthTransaction) IsValidType() bool {
 }
 
 // IsAuthorized verifies that the transaction is being posted by a user who is found in the list
-// of authorized users
+// of authorized users for a channel
 func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 	var auth = trans.Username + ":" + hashAuth(trans.Username, trans.Password)
 
@@ -66,6 +73,10 @@ func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
 	return false
 }
 
+// VerifyAndFormatAddUserTrans verifies, upon a transaction to add a user to a channel/blockchain, that the transaction
+// has the correct message formatting and that the user is not already found in the channel's user listings. Additionally,
+// this function returns a "Transaction" (with proper message formatting) to guarantee that the transaction does not
+// compromise the password
 func (trans AuthTransaction) VerifyAndFormatAddUserTrans(oldBlock Block) (Transaction, error) {
 	strs := strings.Split(trans.Message, ":")
 	if len(strs) < 2 {

@@ -13,6 +13,15 @@ func (chain BlockChain) Len() int {
 	return len(chain.Blocks)
 }
 
+func (chain BlockChain) ToString() string {
+	str := "Chain: \n{\n"
+	for _, v := range chain.Blocks {
+		str += v.ToString()
+	}
+	str += "}"
+	return str
+}
+
 func (chain BlockChain) IsValid() bool {
 	if chain.Len() != len(chain.Blocks) {
 		return false

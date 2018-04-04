@@ -81,6 +81,7 @@ func InitialBlockFromSeed(seedBlock Block, users []string) Block {
 	initBlock.PrevHash = seedBlock.PrevHash
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
+	initBlock.Nonce = seedBlock.Nonce + " " //make sure hashes are always different
 
 	initBlock.Hash = calcHash(initBlock)
 	return initBlock
