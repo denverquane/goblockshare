@@ -68,6 +68,24 @@ func InitialBlock(users []UserPassPair, version string) Block {
 	return initBlock
 }
 
+func InitialBlockFromSeed(seedBlock Block, users []string) Block {
+	var initBlock Block
+	t := time.Now()
+	initBlock.Index = 0
+	initBlock.Timestamp = t.Format(time.RFC1123)
+	initBlock.Transactions = make([]Transaction, 0)
+	initBlock.Users = make([]string, len(users))
+	for i, v := range users {
+		initBlock.Users[i] = v
+	}
+	initBlock.PrevHash = seedBlock.PrevHash
+	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
+	initBlock.Difficulty = 1
+
+	initBlock.Hash = calcHash(initBlock)
+	return initBlock
+}
+
 func hashAuth(username, password string) string {
 	h := sha256.New()
 	h.Write([]byte(username + password))

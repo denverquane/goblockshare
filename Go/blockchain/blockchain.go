@@ -60,6 +60,12 @@ func MakeInitialChain(users []UserPassPair, version string) BlockChain {
 	return chain
 }
 
+func CreateChainFromSeed(seed BlockChain) BlockChain {
+	chain := BlockChain{Blocks: make([]Block, 1)}
+	chain.Blocks[0] = InitialBlockFromSeed(seed.Blocks[0], seed.GetNewestBlock().Users)
+	return chain
+}
+
 //AppendMissingBlocks takes a chain, and appends all the transactions that are found on a longer chain to it
 //This is handy when using a single Global chain that should never be entirely replaced; only appended to
 func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) {

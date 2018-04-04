@@ -33,10 +33,11 @@ func main() {
 func run() error {
 	httpAddr := os.Getenv("PORT")
 	version := os.Getenv("VERSION")
+	adminChannelName := os.Getenv("ADMIN_CHANNEL_NAME")
 	h := hashDirectory("./Go")
 	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %x\n", h)
 
-	muxx := network.MakeMuxRouter()
+	muxx := network.MakeMuxRouter(adminChannelName)
 
 	log.Println("Listening on ", os.Getenv("PORT"))
 
@@ -48,7 +49,7 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	makeGlobalChain(version)
+	makeGlobalChain(version, adminChannelName)
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -57,11 +58,11 @@ func run() error {
 	return nil
 }
 
-func makeGlobalChain(version string) {
+func makeGlobalChain(version string, adminChannel string) {
 	users := make([]blockchain.UserPassPair, 1)
 	users[0] = blockchain.UserPassPair{"admin", "pass"}
 	chain := blockchain.MakeInitialChain(users, version)
-	blockchain.SetChannelChain("Admin Channel", chain)
+	blockchain.SetChannelChain(adminChannel, chain)
 }
 
 func hashDirectory(dir string) string {

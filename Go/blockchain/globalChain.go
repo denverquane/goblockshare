@@ -8,24 +8,58 @@ import (
 
 var globalChains = make(map[string]*BlockChain)
 
-func SetChannelChain(channel string, chain BlockChain) {
-	if _, ok := globalChains[channel]; ok == false {
-		globalChains[channel] = &chain
-		log.Println("Added \"" + channel + "\" channel")
+func CreateNewChannel(transaction AuthTransaction, adminChainName string) (BlockChain, error) {
+	adminChain, err := GetChainByValue(adminChainName)
+	if err != nil {
+		return BlockChain{}, err //don't ever return the admin chain until authorization
+	}
+	if !transaction.IsAuthorized(adminChain.GetNewestBlock().Users) {
+		return BlockChain{}, errors.New("Not authorized to post to admin channel")
+	}
+
+	if transaction.TransactionType != "CREATE_CHANNEL" {
+		return BlockChain{}, errors.New("Incorrect transtype for creating a channel")
+	}
+
+	if val, ok := globalChains[transaction.Message]; ok == false {
+		chain := CreateChainFromSeed(adminChain)
+		globalChains[transaction.Message] = &chain
+		log.Println("Created " + transaction.Message + " channel")
+		return *globalChains[transaction.Message], nil
 	} else {
-		fmt.Println("Tried to set the globalchain when one is already set...")
+		log.Println("Tried to create a channel that already exists")
+		return *val, errors.New("Tried to create a channel that already exists")
 	}
 }
 
-func GetChainByValue(channel string) BlockChain {
-	return *globalChains[channel]
+func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
+	if val, ok := globalChains[channel]; ok == false {
+		globalChains[channel] = &chain
+		log.Println("Added \"" + channel + "\" channel")
+		return *globalChains[channel], nil
+	} else {
+		log.Println("Tried to set the globalchain when one is already set...")
+		return *val, errors.New("Tried to set the globalchain when one is already set...")
+	}
+}
+
+func GetChainByValue(channel string) (BlockChain, error) {
+	if _, ok := globalChains[channel]; ok == true {
+		return *globalChains[channel], nil
+	} else {
+		log.Printf("Attempted to access non-existent \"%s\" channel", channel)
+		return BlockChain{}, errors.New(channel + " does not exist")
+	}
 }
 
 func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, error) {
-	var thisChain = GetChainByValue(channel)
+	var thisChain, err = GetChainByValue(channel)
+
+	if err != nil {
+		return thisChain, err
+	}
 
 	if newChain.IsValid() {
-
 		if newChain.Len() > thisChain.Len() {
 			if AreChainsSameBranch(thisChain, newChain) {
 				globalChains[channel].mux.Lock()
@@ -47,7 +81,11 @@ func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, err
 }
 
 func WriteTransaction(channel string, trans AuthTransaction) (BlockChain, error) {
-	var thisChain = GetChainByValue(channel)
+	var thisChain, err = GetChainByValue(channel)
+
+	if err != nil {
+		return thisChain, err
+	}
 
 	if trans.TransactionType == "" || trans.Message == "" {
 		return thisChain, errors.New("Supply transaction in this format: " + GetTransactionFormat())

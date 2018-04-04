@@ -13,6 +13,7 @@ const (
 	ADD_FILE
 	DELETE_MESSAGE
 	ADD_USER
+	CREATE_CHANNEL
 )
 
 var ValidTransactionTypes = map[string]TransType{
@@ -21,6 +22,7 @@ var ValidTransactionTypes = map[string]TransType{
 	"ADD_FILE":       ADD_FILE,
 	"DELETE_MESSAGE": DELETE_MESSAGE,
 	"ADD_USER":       ADD_USER,
+	"CREATE_CHANNEL": CREATE_CHANNEL,
 }
 
 type AuthTransaction struct {
@@ -106,5 +108,5 @@ func SampleAuthTransaction(user, pass string) AuthTransaction {
 }
 
 func GetTransactionFormat() string {
-	return "{username:User,password:Pass,channel:TestChannel,message:SampleMessage,transactiontype:ADD_MESSAGE}"
+	return "{username:User,password:Pass,message:SampleMessage,transactiontype:ADD_MESSAGE}"
 }

@@ -5,23 +5,68 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"io"
 	"net/http"
 )
 
-func MakeMuxRouter() http.Handler {
+var ADMIN_CHANNEL_NAME string
+
+func MakeMuxRouter(adminChannelName string) http.Handler {
+	ADMIN_CHANNEL_NAME = adminChannelName
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/{channel}/chain", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/{channel}/users", handleGetUsers).Methods("GET")
 	muxRouter.HandleFunc("/{channel}/postTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/{channel}/chain", handleChainUpdate).Methods("POST")
+	muxRouter.HandleFunc("/{channel}/create", handleCreateChannel).Methods("POST")
 	return muxRouter
+}
+
+func handleCreateChannel(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	if vars["channel"] != ADMIN_CHANNEL_NAME {
+		respondWithJSON(w, r, http.StatusBadRequest, errors.New("Please use the endpoint for the admin channel"+
+			"when attempting to create a new channel. For example, .../ADMIN/create"))
+		return
+	}
+
+	var m blockchain.AuthTransaction
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+	defer r.Body.Close()
+
+	chain, err := blockchain.CreateNewChannel(m, ADMIN_CHANNEL_NAME)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(chain, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, string(data))
 }
 
 func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	data, err := json.MarshalIndent(blockchain.GetChainByValue(vars["channel"]), "", "  ")
+	chain, err := blockchain.GetChainByValue(vars["channel"])
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(chain, "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -85,7 +130,13 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	var chain = blockchain.GetChainByValue(vars["channel"])
+	var chain, err = blockchain.GetChainByValue(vars["channel"])
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	authors := chain.GetNewestBlock().Users
 	data, err := json.MarshalIndent(authors, "", "  ")
 	if err != nil {
