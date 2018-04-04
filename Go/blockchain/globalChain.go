@@ -1,8 +1,8 @@
 package blockchain
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 )
 
@@ -39,7 +39,7 @@ func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, err
 				return thisChain, errors.New("Chains are of different branches, keeping mine!")
 			}
 		} else {
-			return thisChain, errors.New("Provided chain is not longer than the current chain")
+			return thisChain, errors.New("provided chain is not longer than the current chain")
 		}
 	} else {
 		return thisChain, errors.New("Provided chain is invalid; keeping old chain")
