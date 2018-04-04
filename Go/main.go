@@ -1,19 +1,19 @@
 package main
 
 import (
-	"os"
+	"crypto/sha256"
+	"fmt"
+	"github.com/denverquane/GoBlockShare/Go/blockchain"
+	"github.com/denverquane/GoBlockShare/Go/network"
+	"github.com/joho/godotenv"
+	"hash"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
-	"github.com/joho/godotenv"
-	"github.com/denverquane/GoBlockChat/Go/network"
-	"github.com/denverquane/GoBlockChat/Go/blockchain"
-	"io/ioutil"
-	"fmt"
-	"crypto/sha256"
-	"io"
-	"hash"
+	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -33,10 +33,11 @@ func main() {
 func run() error {
 	httpAddr := os.Getenv("PORT")
 	version := os.Getenv("VERSION")
+	adminChannelName := os.Getenv("ADMIN_CHANNEL_NAME")
 	h := hashDirectory("./Go")
-	fmt.Printf("GoBlockShare Version: " + version + ", Checksum: %x\n", h)
+	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %x\n", h)
 
-	muxx := network.MakeMuxRouter()
+	muxx := network.MakeMuxRouter(adminChannelName)
 
 	log.Println("Listening on ", os.Getenv("PORT"))
 
@@ -48,7 +49,7 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	makeGlobalChain(version)
+	makeGlobalChain(version, adminChannelName)
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -57,12 +58,11 @@ func run() error {
 	return nil
 }
 
-func makeGlobalChain(version string) {
-	users := make([]blockchain.UserPassPair, 2)
+func makeGlobalChain(version string, adminChannel string) {
+	users := make([]blockchain.UserPassPair, 1)
 	users[0] = blockchain.UserPassPair{"admin", "pass"}
-	users[1] = blockchain.UserPassPair{"user1", "pass"}
 	chain := blockchain.MakeInitialChain(users, version)
-	blockchain.SetGlobalChain(chain)
+	blockchain.SetChannelChain(adminChannel, chain)
 }
 
 func hashDirectory(dir string) string {
@@ -71,24 +71,24 @@ func hashDirectory(dir string) string {
 		fmt.Print(err)
 	}
 
-	hash := sha256.New()
+	h := sha256.New()
 	for _, v := range b {
-		hash = recursivelyHashFiles(hash, v, dir + "/")
+		h = recursivelyHashFiles(h, v, dir+"/")
 	}
-	return (string)(hash.Sum(nil))
+	return (string)(h.Sum(nil))
 }
 
 func recursivelyHashFiles(hasher hash.Hash, info os.FileInfo, path string) hash.Hash {
-	if info.IsDir() && !strings.Contains(info.Name(), ".git") && !strings.Contains(info.Name(), ".idea"){
+	if info.IsDir() && !strings.Contains(info.Name(), ".git") && !strings.Contains(info.Name(), ".idea") {
 		// fmt.Println("Opening dir: " + path + info.Name())
 		b, err := ioutil.ReadDir(path + info.Name())
 		if err != nil {
 			fmt.Print(err)
 		}
 		for _, v := range b {
-			hasher = recursivelyHashFiles(hasher, v, path + info.Name() + "/")
+			hasher = recursivelyHashFiles(hasher, v, path+info.Name()+"/")
 		}
-	} else if !strings.Contains(info.Name(), ".git") && !strings.Contains(info.Name(), ".idea"){
+	} else if !strings.Contains(info.Name(), ".git") && !strings.Contains(info.Name(), ".idea") {
 		// fmt.Println("Hashing File: " + (path + info.Name()))
 		file, err := os.Open(path + info.Name())
 
@@ -104,4 +104,3 @@ func recursivelyHashFiles(hasher hash.Hash, info os.FileInfo, path string) hash.
 	}
 	return hasher
 }
-

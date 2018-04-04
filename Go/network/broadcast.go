@@ -1,12 +1,12 @@
 package network
 
 import (
-	"encoding/json"
-	"net/http"
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"io/ioutil"
-	"github.com/denverquane/GoBlockChat/Go/blockchain"
+	"net/http"
 )
 
 func BroadcastChain(url string, chain blockchain.BlockChain) {

@@ -5,3 +5,10 @@ go:
 
 script:
  - go test -v ./Go/blockchain/...
+
+notifications:
+  slack: 
+    rooms: 
+      - coredumped:UQEsP0kEah6qdKcZITNgejrk
+    on_success: change
+    on_failure: always

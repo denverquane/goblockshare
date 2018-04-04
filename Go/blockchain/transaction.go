@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"strings"
 	"errors"
+	"strings"
 )
 
 type TransType int
@@ -13,38 +13,38 @@ const (
 	ADD_FILE
 	DELETE_MESSAGE
 	ADD_USER
+	CREATE_CHANNEL
 )
 
 var ValidTransactionTypes = map[string]TransType{
-	"TEST" : TEST,
-	"ADD_MESSAGE" : ADD_MESSAGE,
-	"ADD_FILE" : ADD_FILE,
-	"DELETE_MESSAGE" : DELETE_MESSAGE,
-	"ADD_USER" : ADD_USER,
+	"TEST":           TEST,
+	"ADD_MESSAGE":    ADD_MESSAGE,
+	"ADD_FILE":       ADD_FILE,
+	"DELETE_MESSAGE": DELETE_MESSAGE,
+	"ADD_USER":       ADD_USER,
+	"CREATE_CHANNEL": CREATE_CHANNEL,
 }
 
 type AuthTransaction struct {
-	Username 		string
-	Password		string
-	Channel 		string
-	Message 		string
-	TransactionType	string
+	Username        string
+	Password        string
+	Message         string
+	TransactionType string
 }
 
 type Transaction struct {
 	Username        string
-	Channel         string
 	Message         string
 	TransactionType TransType
 }
 
 type UserTransaction struct {
-	Username		string
-	Message 		string
+	Username string
+	Message  string
 }
 
 func (trans AuthTransaction) IsValidType() bool {
-	for i,_ := range ValidTransactionTypes {
+	for i, _ := range ValidTransactionTypes {
 		if trans.TransactionType == i {
 			return true
 		}
@@ -90,23 +90,23 @@ func (trans AuthTransaction) VerifyAndFormatAddUserTrans(oldBlock Block) (Transa
 // RemovePassword takes an authorized transaction and converts it to a standard transaction,
 // so it can be securely posted to the blockchain without posting a plaintext authorization
 func (trans AuthTransaction) RemovePassword() Transaction {
-	return Transaction{Username:trans.Username, Channel:trans.Channel,
-		Message:trans.Message, TransactionType:ValidTransactionTypes[trans.TransactionType]}
+	return Transaction{Username: trans.Username, Message: trans.Message,
+		TransactionType: ValidTransactionTypes[trans.TransactionType]}
 }
 
 func (trans Transaction) ToString() string {
-	return trans.Username + " posted \"" + trans.Message + "\" on the " + trans.Channel + " channel"
+	return trans.Username + " posted \"" + trans.Message + "\""
 }
 
 func (trans AuthTransaction) ToString() string {
-	return trans.Username + " w/ pass: " + trans.Password + " posted " + trans.TransactionType + " type to " +
-		trans.Channel + " w/ message: " + trans.Message
+	return trans.Username + " w/ pass: " + trans.Password + " posted " + trans.TransactionType +
+		" w/ message: " + trans.Message
 }
 
 func SampleAuthTransaction(user, pass string) AuthTransaction {
-	return AuthTransaction{user, pass, "Test", "Sample message.", "TEST"}
+	return AuthTransaction{user, pass, "Sample message.", "TEST"}
 }
 
 func GetTransactionFormat() string {
-	return "{username:User,password:Pass,channel:TestChannel,message:SampleMessage,transactiontype:ADD_MESSAGE}"
+	return "{username:User,password:Pass,message:SampleMessage,transactiontype:ADD_MESSAGE}"
 }

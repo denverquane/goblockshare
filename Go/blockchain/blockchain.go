@@ -5,12 +5,9 @@ import (
 )
 
 type BlockChain struct {
-	Blocks		[]Block
-	mux 		sync.Mutex
+	Blocks []Block
+	mux    sync.Mutex
 }
-
-var ChannelTransMap = make(map[string][]UserTransaction)
-var IndexCounter = -1
 
 func (chain BlockChain) Len() int {
 	return len(chain.Blocks)
@@ -63,34 +60,18 @@ func MakeInitialChain(users []UserPassPair, version string) BlockChain {
 	return chain
 }
 
+func CreateChainFromSeed(seed BlockChain) BlockChain {
+	chain := BlockChain{Blocks: make([]Block, 1)}
+	chain.Blocks[0] = InitialBlockFromSeed(seed.Blocks[0], seed.GetNewestBlock().Users)
+	return chain
+}
+
 //AppendMissingBlocks takes a chain, and appends all the transactions that are found on a longer chain to it
 //This is handy when using a single Global chain that should never be entirely replaced; only appended to
-func (chain BlockChain) AppendMissingBlocks (longerChain BlockChain) {
-	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid(){
+func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) {
+	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid() {
 		for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
 			chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
 		}
 	}
-}
-
-func (chain BlockChain) GenerateCollapsedChannelChat() map[string][]UserTransaction{
-	block := chain.GetNewestBlock()
-	if !(block.Index > int64(IndexCounter)) {
-		return ChannelTransMap //blocks haven't been updated, just return the old one
-	}
-
-	//TODO Update index, and only process the transactions not already processed in the map
-	for _, v := range block.Transactions {
-		if v.TransactionType != ADD_USER {
-			if _, ok := ChannelTransMap[v.Channel]; ok { // Is the entry (the channel name) found in the map?
-				ChannelTransMap[v.Channel] = append(ChannelTransMap[v.Channel], UserTransaction{v.Username, v.Message})
-				//if it's found, add the message to that channel
-				//if it's found, add the message to that channel
-			} else { //otherwise, make the channel in the map, and then add the transaction
-				ChannelTransMap[v.Channel] = make([]UserTransaction, 1)
-				ChannelTransMap[v.Channel][0] = UserTransaction{v.Username, v.Message}
-			}
-		}
-	}
-	return ChannelTransMap
 }

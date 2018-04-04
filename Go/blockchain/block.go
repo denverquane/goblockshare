@@ -3,14 +3,14 @@
 package blockchain
 
 import (
-	"encoding/hex"
 	"crypto/sha256"
-	"time"
-	"strconv"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
-	"errors"
+	"time"
 )
 
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
@@ -20,11 +20,11 @@ type Block struct {
 	Index        int64
 	Timestamp    string
 	Transactions []Transaction
-	Users		 []string
+	Users        []string
 	Hash         string
 	PrevHash     string
 	Difficulty   int
-	Nonce		 string
+	Nonce        string
 }
 
 type UserPassPair struct {
@@ -36,16 +36,16 @@ type UserPassPair struct {
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
 		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Users: \n"
-			for _,v := range block.Users {
-				str += "     " + v + "\n"
-			}
-		str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
-		if len(block.PrevHash) > 4 {
-			str += block.PrevHash[0:5] + "...\n]\n"
-		} else {
-			str += "...\n]\n"
-		}
-		return str
+	for _, v := range block.Users {
+		str += "     " + v + "\n"
+	}
+	str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
+	if len(block.PrevHash) > 4 {
+		str += block.PrevHash[0:5] + "...\n]\n"
+	} else {
+		str += "...\n]\n"
+	}
+	return str
 }
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
@@ -61,6 +61,24 @@ func InitialBlock(users []UserPassPair, version string) Block {
 		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
 	}
 	initBlock.PrevHash = "GoBlockShare Version: " + version
+	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
+	initBlock.Difficulty = 1
+
+	initBlock.Hash = calcHash(initBlock)
+	return initBlock
+}
+
+func InitialBlockFromSeed(seedBlock Block, users []string) Block {
+	var initBlock Block
+	t := time.Now()
+	initBlock.Index = 0
+	initBlock.Timestamp = t.Format(time.RFC1123)
+	initBlock.Transactions = make([]Transaction, 0)
+	initBlock.Users = make([]string, len(users))
+	for i, v := range users {
+		initBlock.Users[i] = v
+	}
+	initBlock.PrevHash = seedBlock.PrevHash
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
@@ -109,7 +127,7 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 	newBlock.PrevHash = oldBlock.Hash
 
 	for _, t := range transactions {
-		if !t.IsValidType(){
+		if !t.IsValidType() {
 			log.Println("Invalid transaction type supplied!!!")
 			log.Println(t.ToString())
 			fmt.Println("Retaining old block")
@@ -144,7 +162,7 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 		newBlock.Nonce = hexx
 		hash := calcHash(newBlock)
 
-		if !isHashValid(hash, newBlock.Difficulty * len(transactions)) { // difficulty is prop. to the # of transactions
+		if !isHashValid(hash, newBlock.Difficulty*len(transactions)) { // difficulty is prop. to the # of transactions
 			//fmt.Println("Do more work: " + hash)
 			continue
 		} else {
@@ -153,8 +171,8 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 		}
 	}
 	endTime := time.Now()
-	fmt.Println("Took " + strconv.Itoa(endTime.Second() - hashTime.Second()) + " seconds to mine with diff=" +
-		strconv.Itoa(newBlock.Difficulty * len(transactions)))
+	fmt.Println("Took " + strconv.Itoa(endTime.Second()-hashTime.Second()) + " seconds to mine with diff=" +
+		strconv.Itoa(newBlock.Difficulty*len(transactions)))
 
 	return newBlock, nil
 }

@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestSampleAuthTransaction(t *testing.T) {
@@ -19,7 +19,7 @@ func TestSampleAuthTransaction(t *testing.T) {
 	}
 }
 
-func TestAuthTransaction_RemovePassword(t *testing.T)  {
+func TestAuthTransaction_RemovePassword(t *testing.T) {
 	aTrans := SampleAuthTransaction("user", "pass")
 
 	trans := aTrans.RemovePassword()
@@ -35,14 +35,10 @@ func TestAuthTransaction_RemovePassword(t *testing.T)  {
 	if trans.Message != aTrans.Message {
 		t.Fail()
 	}
-
-	if trans.Channel != aTrans.Channel {
-		t.Fail()
-	}
 }
 
 func TestAuthTransaction_CensorAddUserMessage(t *testing.T) {
-	aTrans := AuthTransaction{Username: "user", Password:"pass", Message:"newuser:password", TransactionType:"ADD_USER"}
+	aTrans := AuthTransaction{Username: "user", Password: "pass", Message: "newuser:password", TransactionType: "ADD_USER"}
 	block := InitialBlock([]UserPassPair{}, "")
 
 	stripped, err := aTrans.VerifyAndFormatAddUserTrans(block)
