@@ -65,6 +65,9 @@ func makeGlobalChain(version string, adminChannel string) {
 	blockchain.SetChannelChain(adminChannel, chain)
 }
 
+//hashDirectory receives a relative or absolute path, and hashes together all the files contained within the directory.
+//This is for verification that separate program instances are all running the same version, with no modifications to
+//the original source code
 func hashDirectory(dir string) string {
 	b, err := ioutil.ReadDir(dir)
 	if err != nil {
