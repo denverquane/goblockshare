@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
+	"errors"
 	"io"
 	"net/http"
 )
