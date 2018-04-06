@@ -8,6 +8,9 @@ import (
 
 var globalChains = make(map[string]*BlockChain)
 
+//CreateNewChannel attempts to create a new blockchain from a received transaction, and the name of the ADMIN/
+//authorizing channel. If the transaction is invalid, or the user is not an authorized admin, then the function
+//returns an empty blockchain and an error
 func CreateNewChannel(transaction AuthTransaction, adminChainName string) (BlockChain, error) {
 	adminChain, err := GetChainByValue(adminChainName)
 	if err != nil {
@@ -21,6 +24,10 @@ func CreateNewChannel(transaction AuthTransaction, adminChainName string) (Block
 		return BlockChain{}, errors.New("Incorrect transtype for creating a channel")
 	}
 
+	if transaction.Message == "" {
+		return BlockChain{}, errors.New("transaction message/channel name is empty")
+	}
+
 	if val, ok := globalChains[transaction.Message]; ok == false {
 		chain := CreateChainFromSeed(adminChain)
 		globalChains[transaction.Message] = &chain
@@ -32,6 +39,9 @@ func CreateNewChannel(transaction AuthTransaction, adminChainName string) (Block
 	}
 }
 
+//SetChannelChain attempts to map the name of a channel to the blockchain that it represents. If there is already an
+//entry for a specified channel name, the function returns the chain and an error (this function does not allow directly
+//overriding an existing channel by the same name)
 func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
 	if channel == "" {
 		log.Println("Invalid empty channel name provided")
@@ -44,16 +54,26 @@ func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
 	}
 
 	if val, ok := globalChains[channel]; ok == false {
-		globalChains[channel] = &chain
-		log.Println("Added \"" + channel + "\" channel")
-		return *globalChains[channel], nil
+		if chain.IsValid() {
+			globalChains[channel] = &chain
+			log.Println("Added \"" + channel + "\" channel")
+			return *globalChains[channel], nil
+		} else {
+			log.Println("Attempted to set " + channel + " channel, but chain is invalid")
+			return chain, errors.New("Attempted to set " + channel + " channel, but chain is invalid")
+		}
 	} else {
 		log.Println("Tried to set the globalchain when one is already set...")
 		return *val, errors.New("Tried to set the globalchain when one is already set...")
 	}
 }
 
+//GetChainByValue returns the channel/blockchain associated with a provided string name
 func GetChainByValue(channel string) (BlockChain, error) {
+	if channel == "" {
+		log.Println("Attempted to access channel with empty name")
+		return BlockChain{}, errors.New("Channel name is empty")
+	}
 	if _, ok := globalChains[channel]; ok == true {
 		return *globalChains[channel], nil
 	} else {
@@ -62,7 +82,11 @@ func GetChainByValue(channel string) (BlockChain, error) {
 	}
 }
 
-func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, error) {
+//AttemptReplaceChain takes a channel name and a blockchain, and checks to see if the existing chain for the provided
+//string name can be replaced with the newly provided blockchain. This function checks to ensure that the new chain is
+//valid, of the same branch as the original channel, and is longer than the existing chain. If any of these conditions
+//fail, the function returns the provided chain and an error
+func AttemptReplaceChain(channel string, newChain BlockChain) (BlockChain, error) {
 	var thisChain, err = GetChainByValue(channel)
 
 	if err != nil {
@@ -80,16 +104,17 @@ func CheckReplacementChain(channel string, newChain BlockChain) (BlockChain, err
 
 				return *globalChains[channel], nil
 			} else {
-				return thisChain, errors.New("Chains are of different branches, keeping mine!")
+				return thisChain, errors.New("chains are of different branches, keeping mine!")
 			}
 		} else {
 			return thisChain, errors.New("provided chain is not longer than the current chain")
 		}
 	} else {
-		return thisChain, errors.New("Provided chain is invalid; keeping old chain")
+		return thisChain, errors.New("provided chain is invalid; keeping old chain")
 	}
 }
 
+//WriteTransaction attempts to write a transaction to the channel referred to by the provided string name.
 func WriteTransaction(channel string, trans AuthTransaction) (BlockChain, error) {
 	var thisChain, err = GetChainByValue(channel)
 

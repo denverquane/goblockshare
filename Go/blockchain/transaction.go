@@ -62,6 +62,10 @@ func (trans AuthTransaction) IsValidType() bool {
 // IsAuthorized verifies that the transaction is being posted by a user who is found in the list
 // of authorized users for a channel
 func (trans AuthTransaction) IsAuthorized(authUsers []string) bool {
+	if trans.Username == "" || trans.Password == "" {
+		return false
+	}
+
 	var auth = trans.Username + ":" + hashAuth(trans.Username, trans.Password)
 
 	for _, v := range authUsers {

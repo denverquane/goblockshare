@@ -68,6 +68,8 @@ func InitialBlock(users []UserPassPair, version string) Block {
 	return initBlock
 }
 
+//InitialBlockFromSeed creates a new initial block from some other "seed" initial block. This is intended for when a new
+//blockchain is created, but the initial block (whatever that may contain) should be preserved and copied
 func InitialBlockFromSeed(seedBlock Block, users []string) Block {
 	var initBlock Block
 	t := time.Now()
@@ -177,12 +179,6 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 
 	return newBlock, nil
 }
-
-//func (block Block) interpretMessageAndApplyBehavior(transType TransType) Block {
-//	if transType == ADD_USER {
-//
-//	}
-//}
 
 //ValidateAddUser ensures that the message provided not only matches the correct format for adding a user,
 //but also doesn't contain an entry for adding a user that already exists

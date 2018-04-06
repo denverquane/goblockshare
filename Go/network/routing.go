@@ -90,7 +90,7 @@ func handleChainUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	chain, err := blockchain.CheckReplacementChain(vars["channel"], m)
+	chain, err := blockchain.AttemptReplaceChain(vars["channel"], m)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -163,23 +163,3 @@ func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload i
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	w.Write(response)
 }
-
-//func getPeersFromInput(){
-//	var done = false
-//	for !done {
-//		reader := bufio.NewReader(os.Stdin)
-//		fmt.Println("Enter URL to broadcast to, WITH port (ex: 127.0.0.1:8090), or \"quit\" if you're done: ")
-//		text, _ := reader.ReadString('\n')
-//		text = strings.Replace(text, "\n", "", 1)
-//		text = strings.Replace(text, " ", "", 1)
-//		fmt.Println("Entered: \"" + text + "\"")
-//		if text == "quit" {
-//			done = true
-//		} else if text == "" {
-//			fmt.Println("Empty string supplied")
-//		} else {
-//			BroadcastChain("http://" + text + "/chainUpdate", *globalChain)
-//			Peers = append(Peers, "http://" + text + "/chainUpdate")
-//		}
-//	}
-//}
