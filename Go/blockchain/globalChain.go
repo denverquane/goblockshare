@@ -33,6 +33,16 @@ func CreateNewChannel(transaction AuthTransaction, adminChainName string) (Block
 }
 
 func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
+	if channel == "" {
+		log.Println("Invalid empty channel name provided")
+		return BlockChain{}, errors.New("Invalid empty channel name provided")
+	}
+
+	if len(chain.Blocks) == 0 {
+		log.Println("Empty chain provided")
+		return BlockChain{}, errors.New("Empty chain provided")
+	}
+
 	if val, ok := globalChains[channel]; ok == false {
 		globalChains[channel] = &chain
 		log.Println("Added \"" + channel + "\" channel")
