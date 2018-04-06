@@ -44,8 +44,13 @@ func CreateNewChannel(transaction AuthTransaction, adminChainName string) (Block
 //overriding an existing channel by the same name)
 func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
 	if channel == "" {
-		log.Println("Attempted to set channel with empty name")
-		return chain, errors.New("Channel name is empty")
+		log.Println("Invalid empty channel name provided")
+		return BlockChain{}, errors.New("Invalid empty channel name provided")
+	}
+
+	if len(chain.Blocks) == 0 {
+		log.Println("Empty chain provided")
+		return BlockChain{}, errors.New("Empty chain provided")
 	}
 
 	if val, ok := globalChains[channel]; ok == false {
