@@ -11,16 +11,30 @@ import (
 )
 
 var ADMIN_CHANNEL_NAME string
+var VERSION string
+var CHECKSUM string
 
-func MakeMuxRouter(adminChannelName string) http.Handler {
+func MakeMuxRouter(adminChannelName string, version string, checksum string) http.Handler {
 	ADMIN_CHANNEL_NAME = adminChannelName
+	VERSION = version
+	CHECKSUM = checksum
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/{channel}/chain", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/{channel}/users", handleGetUsers).Methods("GET")
 	muxRouter.HandleFunc("/{channel}/postTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/{channel}/chain", handleChainUpdate).Methods("POST")
 	muxRouter.HandleFunc("/{channel}/create", handleCreateChannel).Methods("POST")
+	muxRouter.HandleFunc("/version", handleGetVersion).Methods("GET")
+	muxRouter.HandleFunc("/checksum", handleGetChecksum).Methods("GET")
 	return muxRouter
+}
+
+func handleGetVersion(w http.ResponseWriter, r *http.Request) {
+	respondWithJSON(w, r, http.StatusFound, VERSION)
+}
+
+func handleGetChecksum(w http.ResponseWriter, r *http.Request) {
+	respondWithJSON(w, r, http.StatusFound, CHECKSUM)
 }
 
 func handleCreateChannel(w http.ResponseWriter, r *http.Request) {

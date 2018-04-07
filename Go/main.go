@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"encoding/hex"
 )
 
 func main() {
@@ -35,9 +36,9 @@ func run() error {
 	version := os.Getenv("VERSION")
 	adminChannelName := os.Getenv("ADMIN_CHANNEL_NAME")
 	h := hashDirectory("./Go")
-	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %x\n", h)
+	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %s\n", h)
 
-	muxx := network.MakeMuxRouter(adminChannelName)
+	muxx := network.MakeMuxRouter(adminChannelName, version, h)
 
 	log.Println("Listening on ", os.Getenv("PORT"))
 
@@ -78,7 +79,7 @@ func hashDirectory(dir string) string {
 	for _, v := range b {
 		h = recursivelyHashFiles(h, v, dir+"/")
 	}
-	return (string)(h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func recursivelyHashFiles(hasher hash.Hash, info os.FileInfo, path string) hash.Hash {
