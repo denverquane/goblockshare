@@ -2,10 +2,10 @@ package network
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"github.com/gorilla/mux"
-	"errors"
 	"io"
 	"net/http"
 )

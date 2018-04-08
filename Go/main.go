@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"github.com/denverquane/GoBlockShare/Go/network"
@@ -14,7 +15,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"encoding/hex"
 )
 
 func main() {
