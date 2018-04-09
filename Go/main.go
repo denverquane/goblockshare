@@ -59,6 +59,7 @@ func run() error {
 	return nil
 }
 
+//makeGlobalChain constructs an initial blockchain for the program, using a specified global admin username/password
 func makeGlobalChain(version string, adminChannel string) {
 	users := make([]blockchain.UserPassPair, 1)
 	users[0] = blockchain.UserPassPair{"admin", "pass"}
