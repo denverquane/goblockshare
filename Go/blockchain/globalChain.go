@@ -140,3 +140,12 @@ func WriteTransaction(channel string, trans AuthTransaction) (BlockChain, error)
 		return thisChain, errors.New("Block sequence invalid somehow...")
 	}
 }
+
+func GetChannelNames() []string {
+	var retArr []string
+
+	for i, _ := range globalChains {
+		retArr = append(retArr, i)
+	}
+	return retArr
+}

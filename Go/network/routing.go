@@ -12,6 +12,7 @@ import (
 func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 	muxRouter.HandleFunc("/createChannel", handleCreateChannel).Methods("POST")
+	muxRouter.HandleFunc("/channels", handleGetChannels).Methods("GET")
 
 	muxRouter.HandleFunc("/{channel}", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/{channel}", handleWriteTransaction).Methods("POST")
@@ -48,6 +49,20 @@ func handleCreateChannel(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(data))
 }
 
+func handleGetChannels(w http.ResponseWriter, r *http.Request) {
+	channels := blockchain.GetChannelNames()
+	data, err := json.MarshalIndent(channels, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("GET Channels")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	io.WriteString(w, string(data))
+}
+
 func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -63,7 +78,7 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("GET")
+	fmt.Println("GET chain")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
@@ -135,7 +150,7 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("GET")
+	fmt.Println("GET Users")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")

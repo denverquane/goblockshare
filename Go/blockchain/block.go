@@ -125,14 +125,14 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 	for _, t := range transactions {
 		if !t.IsValidType() {
 			log.Println("Invalid transaction type supplied!!!")
-			log.Println(t.ToString())
+			// log.Println(t.ToString())
 			fmt.Println("Retaining old block")
 			return oldBlock, errors.New("Invalid type supplied")
 		}
 
 		if !t.IsAuthorized(oldBlock.Users) {
 			log.Println("User is not authorized!!!")
-			log.Println(t.ToString())
+			// log.Println(t.ToString())
 			fmt.Println("Retaining old block")
 			return oldBlock, errors.New("User not authorized")
 		}
