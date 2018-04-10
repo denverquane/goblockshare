@@ -64,7 +64,8 @@ func InitialBlock(users []UserPassPair) Block {
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
-	initBlock.Hash = calcHash(initBlock)
+	initBlock = initBlock.hashUntilValid(6)
+
 	return initBlock
 }
 
@@ -72,6 +73,19 @@ func hashAuth(username, password string) string {
 	h := sha256.New()
 	h.Write([]byte(username + password))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+//hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
+//difficulty
+func (block Block) hashUntilValid(difficulty int) Block {
+	block.Hash = calcHash(block)
+
+	for i := 0; !isHashValid(block.Hash, difficulty); i++ {
+		hexx := fmt.Sprintf("%x", i)
+		block.Nonce = hexx
+		block.Hash = calcHash(block)
+	}
+	return block
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
@@ -139,19 +153,7 @@ func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error
 	}
 
 	hashTime := time.Now()
-	for i := 0; ; i++ {
-		hexx := fmt.Sprintf("%x", i)
-		newBlock.Nonce = hexx
-		hash := calcHash(newBlock)
-
-		if !isHashValid(hash, newBlock.Difficulty*len(transactions)) { // difficulty is prop. to the # of transactions
-			//fmt.Println("Do more work: " + hash)
-			continue
-		} else {
-			newBlock.Hash = hash
-			break
-		}
-	}
+	newBlock = newBlock.hashUntilValid(newBlock.Difficulty)
 	endTime := time.Now()
 	fmt.Println("Took " + strconv.Itoa(endTime.Second()-hashTime.Second()) + " seconds to mine with diff=" +
 		strconv.Itoa(newBlock.Difficulty*len(transactions)))

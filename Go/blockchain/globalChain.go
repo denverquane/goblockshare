@@ -97,7 +97,7 @@ func AttemptReplaceChain(channel string, newChain BlockChain) (BlockChain, error
 
 				return *globalChains[channel], nil
 			} else {
-				return thisChain, errors.New("chains are of different branches, keeping mine!")
+				return thisChain, errors.New("chains are of different branches or versions, keeping mine!")
 			}
 		} else {
 			return thisChain, errors.New("provided chain is not longer than the current chain")
