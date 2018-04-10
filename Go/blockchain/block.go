@@ -64,7 +64,7 @@ func InitialBlock(users []UserPassPair) Block {
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
-	initBlock = initBlock.hashUntilValid(6)
+	initBlock = initBlock.hashUntilValid(3)
 
 	return initBlock
 }
