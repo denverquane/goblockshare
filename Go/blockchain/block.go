@@ -50,7 +50,7 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock(users []UserPassPair, version string) Block {
+func InitialBlock(users []UserPassPair) Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
@@ -60,30 +60,9 @@ func InitialBlock(users []UserPassPair, version string) Block {
 	for i, v := range users {
 		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
 	}
-	initBlock.PrevHash = "GoBlockShare Version: " + version
+	//initBlock.PrevHash = "GoBlockShare Version: " + version
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
-
-	initBlock.Hash = calcHash(initBlock)
-	return initBlock
-}
-
-//InitialBlockFromSeed creates a new initial block from some other "seed" initial block. This is intended for when a new
-//blockchain is created, but the initial block (whatever that may contain) should be preserved and copied
-func InitialBlockFromSeed(seedBlock Block, users []string) Block {
-	var initBlock Block
-	t := time.Now()
-	initBlock.Index = 0
-	initBlock.Timestamp = t.Format(time.RFC1123)
-	initBlock.Transactions = make([]Transaction, 0)
-	initBlock.Users = make([]string, len(users))
-	for i, v := range users {
-		initBlock.Users[i] = v
-	}
-	initBlock.PrevHash = seedBlock.PrevHash
-	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
-	initBlock.Difficulty = 1
-	initBlock.Nonce = seedBlock.Nonce + " " //make sure hashes are always different
 
 	initBlock.Hash = calcHash(initBlock)
 	return initBlock

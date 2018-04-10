@@ -63,15 +63,9 @@ func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
 }
 
-func MakeInitialChain(users []UserPassPair, version string) BlockChain {
+func MakeInitialChain(users []UserPassPair) BlockChain {
 	chain := BlockChain{Blocks: make([]Block, 1)}
-	chain.Blocks[0] = InitialBlock(users, version)
-	return chain
-}
-
-func CreateChainFromSeed(seed BlockChain) BlockChain {
-	chain := BlockChain{Blocks: make([]Block, 1)}
-	chain.Blocks[0] = InitialBlockFromSeed(seed.Blocks[0], seed.GetNewestBlock().Users)
+	chain.Blocks[0] = InitialBlock(users)
 	return chain
 }
 

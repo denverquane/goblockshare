@@ -23,22 +23,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//file, err := ioutil.ReadFile("Go/main.go")
-	//if err != nil {
-	//	fmt.Print(err)
-	//}
-	//fmt.Println(string(file))
 	log.Fatal(run())
 }
 
 func run() error {
 	httpAddr := os.Getenv("PORT")
 	version := os.Getenv("VERSION")
-	adminChannelName := os.Getenv("ADMIN_CHANNEL_NAME")
 	h := hashDirectory("./Go")
 	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %s\n", h)
 
-	muxx := network.MakeMuxRouter(adminChannelName, version, h)
+	muxx := network.MakeMuxRouter()
 
 	log.Println("Listening on ", os.Getenv("PORT"))
 
@@ -50,7 +44,7 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	makeGlobalChain(version, adminChannelName)
+	makeAGlobalChain("TEST_CHANNEL", blockchain.UserPassPair{"user", "password"})
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -60,11 +54,9 @@ func run() error {
 }
 
 //makeGlobalChain constructs an initial blockchain for the program, using a specified global admin username/password
-func makeGlobalChain(version string, adminChannel string) {
-	users := make([]blockchain.UserPassPair, 1)
-	users[0] = blockchain.UserPassPair{"admin", "pass"}
-	chain := blockchain.MakeInitialChain(users, version)
-	blockchain.SetChannelChain(adminChannel, chain)
+func makeAGlobalChain(channelName string, user blockchain.UserPassPair) {
+	chain := blockchain.MakeInitialChain([]blockchain.UserPassPair{user})
+	blockchain.SetChannelChain(channelName, chain)
 }
 
 //hashDirectory receives a relative or absolute path, and hashes together all the files contained within the directory.

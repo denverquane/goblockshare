@@ -39,7 +39,7 @@ func TestAuthTransaction_RemovePassword(t *testing.T) {
 
 func TestAuthTransaction_CensorAddUserMessage(t *testing.T) {
 	aTrans := AuthTransaction{Username: "user", Password: "pass", Message: "newuser:password", TransactionType: "ADD_USER"}
-	block := InitialBlock([]UserPassPair{}, "")
+	block := InitialBlock([]UserPassPair{})
 
 	stripped, err := aTrans.VerifyAndFormatAddUserTrans(block)
 

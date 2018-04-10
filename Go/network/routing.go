@@ -2,7 +2,6 @@ package network
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/Go/blockchain"
 	"github.com/gorilla/mux"
@@ -10,41 +9,20 @@ import (
 	"net/http"
 )
 
-var ADMIN_CHANNEL_NAME string
-var VERSION string
-var CHECKSUM string
-
-func MakeMuxRouter(adminChannelName string, version string, checksum string) http.Handler {
-	ADMIN_CHANNEL_NAME = adminChannelName
-	VERSION = version
-	CHECKSUM = checksum
+func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/{channel}/chain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/createChannel", handleCreateChannel).Methods("POST")
+
+	muxRouter.HandleFunc("/{channel}", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/{channel}", handleWriteTransaction).Methods("POST")
+
 	muxRouter.HandleFunc("/{channel}/users", handleGetUsers).Methods("GET")
-	muxRouter.HandleFunc("/{channel}/postTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/{channel}/chain", handleChainUpdate).Methods("POST")
-	muxRouter.HandleFunc("/{channel}/create", handleCreateChannel).Methods("POST")
-	muxRouter.HandleFunc("/version", handleGetVersion).Methods("GET")
-	muxRouter.HandleFunc("/checksum", handleGetChecksum).Methods("GET")
 	return muxRouter
 }
 
-func handleGetVersion(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, r, http.StatusFound, VERSION)
-}
-
-func handleGetChecksum(w http.ResponseWriter, r *http.Request) {
-	respondWithJSON(w, r, http.StatusFound, CHECKSUM)
-}
-
 func handleCreateChannel(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	if vars["channel"] != ADMIN_CHANNEL_NAME {
-		respondWithJSON(w, r, http.StatusBadRequest, errors.New("Please use the endpoint for the admin channel"+
-			"when attempting to create a new channel. For example, .../ADMIN/create"))
-		return
-	}
+	//vars := mux.Vars(r)
 
 	var m blockchain.AuthTransaction
 
@@ -55,7 +33,7 @@ func handleCreateChannel(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	chain, err := blockchain.CreateNewChannel(m, ADMIN_CHANNEL_NAME)
+	chain, err := blockchain.CreateNewGlobalChannel(m)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

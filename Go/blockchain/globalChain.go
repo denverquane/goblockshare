@@ -11,14 +11,7 @@ var globalChains = make(map[string]*BlockChain)
 //CreateNewChannel attempts to create a new blockchain from a received transaction, and the name of the ADMIN/
 //authorizing channel. If the transaction is invalid, or the user is not an authorized admin, then the function
 //returns an empty blockchain and an error
-func CreateNewChannel(transaction AuthTransaction, adminChainName string) (BlockChain, error) {
-	adminChain, err := GetChainByValue(adminChainName)
-	if err != nil {
-		return BlockChain{}, err //don't ever return the admin chain until authorization
-	}
-	if !transaction.IsAuthorized(adminChain.GetNewestBlock().Users) {
-		return BlockChain{}, errors.New("Not authorized to post to admin channel")
-	}
+func CreateNewGlobalChannel(transaction AuthTransaction) (BlockChain, error) {
 
 	if transaction.TransactionType != "CREATE_CHANNEL" {
 		return BlockChain{}, errors.New("Incorrect transtype for creating a channel")
@@ -29,9 +22,9 @@ func CreateNewChannel(transaction AuthTransaction, adminChainName string) (Block
 	}
 
 	if val, ok := globalChains[transaction.Message]; ok == false {
-		chain := CreateChainFromSeed(adminChain)
+		chain := MakeInitialChain([]UserPassPair{{transaction.Username, transaction.Password}})
 		globalChains[transaction.Message] = &chain
-		log.Println("Created " + transaction.Message + " channel")
+		log.Println("Created \"" + transaction.Message + "\" channel with initial admin: \"" + transaction.Username + "\"")
 		return *globalChains[transaction.Message], nil
 	} else {
 		log.Println("Tried to create a channel that already exists")

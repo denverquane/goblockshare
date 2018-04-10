@@ -6,7 +6,7 @@ import "testing"
 
 func TestCreateNewChannel(t *testing.T) {
 	trans := AuthTransaction{"", "", "", ""}
-	_, err := CreateNewChannel(trans, "ADMIN")
+	_, err := CreateNewGlobalChannel(trans)
 
 	if err == nil {
 		t.Fail()
