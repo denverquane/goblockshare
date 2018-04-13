@@ -49,6 +49,7 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	} else {
 		min = chain1.Len()
 	}
+
 	for i := 0; i < min; i++ {
 		a := chain1.Blocks[i]
 		b := chain2.Blocks[i]
@@ -57,6 +58,29 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 		}
 	}
 	return true
+}
+
+// AreChainsNewAndSameBranch verifies that the chains are both new chains, and at least have the same users
+func AreChainsNewAndSameBranch(chain1, chain2 BlockChain) bool {
+	if chain1.Len() == 1 || chain2.Len() == 1 {
+		if calcHash(chain1.Blocks[0]) != chain1.Blocks[0].Hash ||
+			calcHash(chain2.Blocks[0]) != chain2.Blocks[0].Hash {
+				return false
+		}
+
+		if len(chain1.Blocks[0].Users) != len(chain2.Blocks[0].Users) {
+			return false
+		} else {
+			for i, v := range chain1.Blocks[0].Users {
+				if v != chain2.Blocks[0].Users[i] {
+					return false // different user lists
+				}
+			}
+			return true // same lists of initial users
+		}
+	} else {
+		return false
+	}
 }
 
 func (chain BlockChain) GetNewestBlock() Block {
@@ -71,10 +95,11 @@ func MakeInitialChain(users []UserPassPair) BlockChain {
 
 //AppendMissingBlocks takes a chain, and appends all the transactions that are found on a longer chain to it
 //This is handy when using a single Global chain that should never be entirely replaced; only appended to
-func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) {
+func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
 	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid() {
 		for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
 			chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
 		}
 	}
+	return chain
 }

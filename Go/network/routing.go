@@ -132,6 +132,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, r, http.StatusCreated, newChain.GetNewestBlock())
+	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)
 }
 
 func handleGetUsers(w http.ResponseWriter, r *http.Request) {

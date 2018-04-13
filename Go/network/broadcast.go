@@ -32,6 +32,6 @@ func BroadcastChain(url string, chain blockchain.BlockChain) {
 
 func BroadcastToAllPeers(peers []string, chain blockchain.BlockChain) {
 	for _, v := range peers {
-		BroadcastChain(v, chain)
+		go BroadcastChain(v, chain)
 	}
 }

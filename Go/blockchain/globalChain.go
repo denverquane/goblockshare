@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 )
 
 var globalChains = make(map[string]*BlockChain)
@@ -63,7 +64,7 @@ func SetChannelChain(channel string, chain BlockChain) (BlockChain, error) {
 
 //GetChainByValue returns the channel/blockchain associated with a provided string name
 func GetChainByValue(channel string) (BlockChain, error) {
-	if channel == "" {
+	if strings.Replace(channel, " ", "", -1) == "" {
 		log.Println("Attempted to access channel with empty name")
 		return BlockChain{}, errors.New("Channel name is empty")
 	}
@@ -80,6 +81,20 @@ func GetChainByValue(channel string) (BlockChain, error) {
 //valid, of the same branch as the original channel, and is longer than the existing chain. If any of these conditions
 //fail, the function returns the provided chain and an error
 func AttemptReplaceChain(channel string, newChain BlockChain) (BlockChain, error) {
+	if strings.Replace(channel, " ", "", -1) == "" {
+		log.Println("Attempted to access channel with empty name")
+		return BlockChain{}, errors.New("Channel name is empty")
+	}
+
+	if _, ok := globalChains[channel]; ok == false {
+		if newChain.IsValid() {
+			globalChains[channel] = &newChain
+			return *globalChains[channel], nil
+		} else {
+			return BlockChain{}, errors.New("Provided a new channel that is invalid!")
+		}
+	}
+
 	var thisChain, err = GetChainByValue(channel)
 
 	if err != nil {
@@ -88,12 +103,11 @@ func AttemptReplaceChain(channel string, newChain BlockChain) (BlockChain, error
 
 	if newChain.IsValid() {
 		if newChain.Len() > thisChain.Len() {
-			if AreChainsSameBranch(thisChain, newChain) {
-				globalChains[channel].mux.Lock()
+			if AreChainsSameBranch(thisChain, newChain) || AreChainsNewAndSameBranch(thisChain, newChain) {
 
-				globalChains[channel].AppendMissingBlocks(newChain)
+				globalChains[channel] = &newChain
 
-				globalChains[channel].mux.Unlock()
+				fmt.Println("replaced")
 
 				return *globalChains[channel], nil
 			} else {
