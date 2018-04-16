@@ -4,7 +4,7 @@ go:
   - master
 
 script:
- - go test -v ./Go/blockchain/...
+ - go test -v ./blockchain/...
 
 notifications:
   slack: 
