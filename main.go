@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load("Go/.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,12 +29,15 @@ func main() {
 func run() error {
 	httpAddr := os.Getenv("PORT")
 	version := os.Getenv("VERSION")
-	h := hashDirectory("./Go")
+	h := hashDirectory(".")
 	fmt.Printf("GoBlockShare Version: "+version+", Checksum: %s\n", h)
 
 	muxx := network.MakeMuxRouter()
 
 	log.Println("Listening on ", os.Getenv("PORT"))
+	if (httpAddr == "8080") {
+		log.Println("(This is the same port used internally for running Docker builds - are you running within a container?)")
+	}
 
 	s := &http.Server{
 		Addr:           ":" + httpAddr,
