@@ -13,7 +13,9 @@ regarding "rewinding" or rollback of chat engagements.
   - [X] Basic difficulty/cryptographic proof validation
   - [X] Scaling difficulty of blocks as the ~~chain~~ userbase grows
   - [ ] Rewards for propagating the chain (?)
+    - Reputation? Trustworthiness/"work" performed for a channel?
 - [ ] Node discovery
+  - [ ] Save chain/channel to disk -> especially for channels with low usercounts w/ possibility of perm. loss
   - [ ] Ability to run app as a node registry/lookup
   - [ ] Active central registry for node lookup
   - [X] Automatically propagate chain changes to other nodes
@@ -23,13 +25,14 @@ regarding "rewinding" or rollback of chat engagements.
   - [X] Basic authentication
   - [ ] Secure authentication (explore security/abuse vulnerabilities)
   - [ ] Permission tiers?
-
-- [ ] ~~Ensure users are running the same program version~~
-
-  - [X] ~~Hash source code to ensure no modifications to versions~~
-
-  - [ ] ~~Only accept/transmit to nodes with the same version~~
-  - Don't need to verify the programs are the same, only that the chains are valid, hashed, and linked correctly
+- [ ] Varied communication methods/formats
+  - [ ] Private messaging (PGP?) -> Other nodes can carry messages, still
+  - [ ] Channel permissions/usergroups? (Only admins can add to private channels...)
+    - Private channels can only be propagated by users/admins of that channel...
+    - Ensure no channels exist of the same name, across ALL nodes (expensive...)
+  - [ ] Different message types
+    - [ ] Larger files only represented by a checksum (query nodes for who has the file?)
+    - [ ] "Stake" reputation on new users? If new users are reputable, referrer and new user gain rep?
 - [X] Basic JS Frontend for viewing the blockchain in realtime
 - [ ] JS Frontend for posting, deleting, editing, etc. messages and transactions
 - [ ] Electron integration for running the web app as a native desktop app
