@@ -3,7 +3,7 @@ package network
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/denverquane/GoBlockShare/Go/blockchain"
+	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
