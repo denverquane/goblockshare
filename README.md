@@ -16,7 +16,7 @@ regarding "rewinding" or rollback of chat engagements.
 - [ ] Node discovery
   - [ ] Ability to run app as a node registry/lookup
   - [ ] Active central registry for node lookup
-  - [ ] Automatically propagate chain changes to other nodes
+  - [X] Automatically propagate chain changes to other nodes
   - [ ] Consensus algo. for chain conflicts (explore merging non-conflicting message types/re-generation of transaction)
 - [ ] Author/poster validation (login validation)
   - [X] Basic authentication
@@ -34,7 +34,7 @@ regarding "rewinding" or rollback of chat engagements.
 - [ ] GO app to interact with the chain, without the Webapp (?)
 
 ## Project Structure:
-This app is comprised of two distinct parts as of 3/30/18.
+This app is comprised of two distinct parts as of 4/15/18.
 These parts serve as the frontend and backend services for the overarching application.
 
 - #### GO Backend
