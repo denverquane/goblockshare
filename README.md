@@ -11,9 +11,11 @@ regarding "rewinding" or rollback of chat engagements.
 ## Goals:
 - [ ] Proof of Work for posting messages/blocks (prevent spam/abuse)
   - [X] Basic difficulty/cryptographic proof validation
-  - [X] Scaling difficulty of blocks as the ~~chain~~ userbase grows
-  - [ ] Rewards for propagating the chain (?)
+  - [ ] Scaling difficulty of blocks as the ~~chain~~ userbase grows
+  - [ ] Rewards for propagating the chain, even if not posting
     - Reputation? Trustworthiness/"work" performed for a channel?
+    - Costs associated w/ creating channels, or joining private channels?
+    - See Bitcoin whitepaper for inspiration: [Bitcoin.org](https://bitcoin.org/bitcoin.pdf)
 - [ ] Node discovery
   - [ ] Save chain/channel to disk -> especially for channels with low usercounts w/ possibility of perm. loss
   - [ ] Ability to run app as a node registry/lookup
@@ -24,7 +26,7 @@ regarding "rewinding" or rollback of chat engagements.
 - [ ] Author/poster validation (login validation)
   - [X] Basic authentication
   - [ ] Secure authentication (explore security/abuse vulnerabilities)
-  - [ ] Permission tiers?
+    - [ ] Use public/private keys for ACTUAL authentication (basic auth can be abused w/ a different program)
 - [ ] Varied communication methods/formats
   - [ ] Private messaging (PGP?) -> Other nodes can carry messages, still
   - [ ] Channel permissions/usergroups? (Only admins can add to private channels...)
