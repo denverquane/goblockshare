@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/denverquane/GoBlockShare/address"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction/address"
 	"fmt"
 )
 
@@ -11,5 +11,5 @@ func main() {
 
 func genericTesting() {
 	addr := address.GenerateNewPersonalAddress()
-	fmt.Println(addr.GetB64Address())
+	fmt.Println(addr.Address)
 }

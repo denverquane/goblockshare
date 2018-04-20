@@ -5,8 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"log"
-	"github.com/denverquane/GoBlockShare/address"
-	"github.com/pkg/errors"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction/address"
+	"errors"
 )
 
 type TransType int
@@ -42,9 +42,9 @@ type FullTransaction struct {
 	destination address.Base64Address
 }
 
-func MakeFull(s SimpleTransaction, key ecdsa.PublicKey, priv ecdsa.PrivateKey, dest address.Base64Address) (FullTransaction, error) {
-	signed := s.SignMessage(&priv)
-	full := FullTransaction{key, address.HashPublicToB64Address(key), []string{}, signed, dest}
+func MakeFull(s SimpleTransaction, origin address.PersonalAddress, dest address.Base64Address) (FullTransaction, error) {
+	signed := s.SignMessage(&origin.PrivateKey)
+	full := FullTransaction{origin.PublicKey, origin.Address, []string{}, signed, dest}
 	if !full.Verify() {
 		return FullTransaction{}, errors.New("Generated transaction is invalid!")
 	}
