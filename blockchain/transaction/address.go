@@ -1,10 +1,10 @@
-package address
+package transaction
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -18,8 +18,8 @@ var AUTHENTICATION_CURVE = elliptic.P256()
 
 type PersonalAddress struct {
 	PrivateKey ecdsa.PrivateKey
-	PublicKey ecdsa.PublicKey
-	Address Base64Address
+	PublicKey  ecdsa.PublicKey
+	Address    Base64Address
 }
 
 func GenerateNewPersonalAddress() PersonalAddress {
@@ -38,7 +38,7 @@ func GenerateNewPersonalAddress() PersonalAddress {
 	}
 	address := HashPublicToB64Address(priv.PublicKey)
 
-	if strings.Contains(string(address), "O") || strings.Contains(string(address), "l"){
+	if strings.Contains(string(address), "O") || strings.Contains(string(address), "l") {
 		fmt.Println("invalid char, regenerating")
 		return GenerateNewPersonalAddress()
 	}

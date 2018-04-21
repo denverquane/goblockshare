@@ -1,12 +1,12 @@
 package transaction
 
 import (
-	"math/big"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"log"
-	"github.com/denverquane/GoBlockShare/blockchain/transaction/address"
 	"errors"
+	"fmt"
+	"log"
+	"math/big"
 )
 
 type TransType int
@@ -26,23 +26,51 @@ type Transaction interface {
 
 type SimpleTransaction struct {
 	Message string
-	TType TransType
+	TType   TransType
 }
 
 type SignedTransaction struct {
-	simple SimpleTransaction
-	r, s *big.Int
+	Simple SimpleTransaction
+	R, S   *big.Int
 }
 
 type FullTransaction struct {
-	originPubKey ecdsa.PublicKey
-	originAddr address.Base64Address
-	txRef	[]string
-	signedPayload	SignedTransaction
-	destination address.Base64Address
+	originPubKey  ecdsa.PublicKey
+	originAddr    Base64Address
+	txRef         []string
+	signedPayload SignedTransaction
+	destination   Base64Address
 }
 
-func MakeFull(s SimpleTransaction, origin address.PersonalAddress, dest address.Base64Address) (FullTransaction, error) {
+type RESTWrappedFullTransaction struct {
+	OriginPubKeyX string
+	OriginPubKeyY string
+	OriginAddress string
+	SignedMsg     string
+	R             string
+	S             string
+	DestAddr      string
+}
+
+func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
+	var full = FullTransaction{}
+	x := new(big.Int)
+	x.SetString(rest.OriginPubKeyX, 10)
+	y := new(big.Int)
+	y.SetString(rest.OriginPubKeyY, 10)
+	full.originPubKey = ecdsa.PublicKey{AUTHENTICATION_CURVE, x, y}
+	full.originAddr = Base64Address(rest.OriginAddress)
+	full.txRef = []string{}
+	r := new(big.Int)
+	r.SetString(rest.R, 10)
+	s := new(big.Int)
+	s.SetString(rest.S, 10)
+	full.signedPayload = SignedTransaction{SimpleTransaction{rest.SignedMsg, ADD_MESSAGE}, r, s}
+	full.destination = Base64Address(rest.DestAddr)
+	return full
+}
+
+func MakeFull(s SimpleTransaction, origin PersonalAddress, dest Base64Address) (FullTransaction, error) {
 	signed := s.SignMessage(&origin.PrivateKey)
 	full := FullTransaction{origin.PublicKey, origin.Address, []string{}, signed, dest}
 	if !full.Verify() {
@@ -70,17 +98,19 @@ func (s SimpleTransaction) ToString() string {
 }
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
-	return ecdsa.Verify(&key, s.simple.GetMessageBytes(), s.r, s.s)
+	return ecdsa.Verify(&key, s.Simple.GetMessageBytes(), s.R, s.S)
 }
 
 func (s SignedTransaction) ToString() string {
-	return s.simple.ToString()
+	return s.Simple.ToString()
 }
 
 func (ft FullTransaction) Verify() bool {
 	if !ft.signedPayload.VerifyWithKey(ft.originPubKey) { //signed transaction isn't verified with the public key
+		fmt.Println("Signed doesnt verify")
 		return false
-	} else if address.HashPublicToB64Address(ft.originPubKey) != ft.originAddr { //public key does not match up with the address
+	} else if HashPublicToB64Address(ft.originPubKey) != ft.originAddr { //public key does not match up with the address
+		fmt.Println("public doesnt match address")
 		return false
 	}
 	// TODO Right here, verify the history of transactions to the origin address
@@ -89,6 +119,5 @@ func (ft FullTransaction) Verify() bool {
 
 func (ft FullTransaction) ToString() string {
 	return "Public key " + ft.originPubKey.X.String() + ft.originPubKey.Y.String() + "\nand address: " + string(ft.originAddr) +
-		"\n sending " + ft.signedPayload.simple.Message + "\nto " + string(ft.destination)
+		"\n sending " + ft.signedPayload.Simple.Message + "\nto " + string(ft.destination)
 }
-

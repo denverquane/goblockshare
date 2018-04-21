@@ -1,12 +1,17 @@
 package blockchain
 
 import (
-	"sync"
+	"fmt"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 )
 
 type BlockChain struct {
-	Blocks []Block
-	mux    sync.Mutex
+	Blocks          []Block
+	processingBlock *Block
+}
+
+func (chain BlockChain) IsProcessing() bool {
+	return chain.processingBlock != nil
 }
 
 func (chain BlockChain) Len() int {
@@ -42,6 +47,24 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
+func (chain BlockChain) AddTransaction(trans transaction.FullTransaction) BlockChain {
+	if chain.processingBlock != nil { //currently processing a block
+		chain.processingBlock.AddTransaction(trans)
+		return chain
+	} else {
+		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans})
+		if err != nil {
+			fmt.Print(err.Error())
+			return chain
+		}
+		chain.processingBlock = &invalidBlock
+		chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty)
+		chain.Blocks = append(chain.Blocks, *chain.processingBlock)
+		chain.processingBlock = nil
+		return chain
+	}
+}
+
 func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	var min = 0
 	if chain1.Len() > chain2.Len() {
@@ -60,36 +83,13 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	return true
 }
 
-// AreChainsNewAndSameBranch verifies that the chains are both new chains, and at least have the same users
-func AreChainsNewAndSameBranch(chain1, chain2 BlockChain) bool {
-	if chain1.Len() == 1 || chain2.Len() == 1 {
-		if calcHash(chain1.Blocks[0]) != chain1.Blocks[0].Hash ||
-			calcHash(chain2.Blocks[0]) != chain2.Blocks[0].Hash {
-				return false
-		}
-
-		if len(chain1.Blocks[0].Users) != len(chain2.Blocks[0].Users) {
-			return false
-		} else {
-			for i, v := range chain1.Blocks[0].Users {
-				if v != chain2.Blocks[0].Users[i] {
-					return false // different user lists
-				}
-			}
-			return true // same lists of initial users
-		}
-	} else {
-		return false
-	}
-}
-
 func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
 }
 
-func MakeInitialChain(users []UserPassPair) BlockChain {
+func MakeInitialChain() BlockChain {
 	chain := BlockChain{Blocks: make([]Block, 1)}
-	chain.Blocks[0] = InitialBlock(users)
+	chain.Blocks[0] = InitialBlock()
 	return chain
 }
 

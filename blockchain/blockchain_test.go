@@ -6,15 +6,11 @@ import (
 )
 
 func TestMakeInitialChain(t *testing.T) {
-	chain := MakeInitialChain([]UserPassPair{})
+	chain := MakeInitialChain()
 
 	fmt.Println(chain.ToString())
 
 	if len(chain.Blocks) != 1 {
-		t.Fail()
-	}
-
-	if len(chain.Blocks[0].Users) != 0 {
 		t.Fail()
 	}
 
