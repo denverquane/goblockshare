@@ -7,9 +7,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,26 +21,18 @@ import (
 type Block struct {
 	Index        int64
 	Timestamp    string
-	Transactions []Transaction
-	Users        []string
+	Transactions []transaction.FullTransaction
 	Hash         string
 	PrevHash     string
 	Difficulty   int
 	Nonce        string
-}
-
-type UserPassPair struct {
-	Username string
-	Password string
+	mux          sync.Mutex
 }
 
 //ToString simply returns a human-legible representation of a Block in question
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
-		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n" + "   Users: \n"
-	for _, v := range block.Users {
-		str += "     " + v + "\n"
-	}
+		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n"
 	str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
 	if len(block.PrevHash) > 4 {
 		str += block.PrevHash[0:5] + "...\n]\n"
@@ -50,34 +44,28 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock(users []UserPassPair) Block {
+func InitialBlock() Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	initBlock.Transactions = make([]Transaction, 0)
-	initBlock.Users = make([]string, len(users))
-	for i, v := range users {
-		initBlock.Users[i] = v.Username + ":" + hashAuth(v.Username, v.Password)
-	}
+	initBlock.Transactions = make([]transaction.FullTransaction, 0)
 	//initBlock.PrevHash = "GoBlockShare Version: " + version
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
-	initBlock = initBlock.hashUntilValid(3)
+	for i := 0; !isHashValid(initBlock.Hash, 3); i++ {
+		hexx := fmt.Sprintf("%x", i)
+		initBlock.Nonce = hexx
+		initBlock.Hash = calcHash(initBlock)
+	}
 
 	return initBlock
 }
 
-func hashAuth(username, password string) string {
-	h := sha256.New()
-	h.Write([]byte(username + password))
-	return hex.EncodeToString(h.Sum(nil))
-}
-
 //hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
 //difficulty
-func (block Block) hashUntilValid(difficulty int) Block {
+func (block Block) hashUntilValid(difficulty int) {
 	block.Hash = calcHash(block)
 
 	for i := 0; !isHashValid(block.Hash, difficulty); i++ {
@@ -85,17 +73,18 @@ func (block Block) hashUntilValid(difficulty int) Block {
 		block.Nonce = hexx
 		block.Hash = calcHash(block)
 	}
-	return block
+}
+
+func (block Block) AddTransaction(trans transaction.FullTransaction) {
+	block.Transactions = append(block.Transactions, trans)
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
 func calcHash(block Block) string {
+
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
 		record += v.ToString()
-	}
-	for _, v := range block.Users {
-		record += v
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
@@ -112,74 +101,27 @@ func isHashValid(hash string, difficulty int) bool {
 //GenerateBlock expects a "base" block to append transactions to, and thus "mining" a new block that contains these
 //transactions. The difficulty in mining this new block is proportional to the number of transactions being added,
 //and the more users that are registered to a channel results in a higher difficulty for mining transactions
-func GenerateBlock(oldBlock Block, transactions []AuthTransaction) (Block, error) {
+func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransaction) (Block, error) {
 
 	var newBlock Block
 	t := time.Now()
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
-	newBlock.Users = oldBlock.Users
 	newBlock.Difficulty = oldBlock.Difficulty
 	newBlock.PrevHash = oldBlock.Hash
 
 	for _, t := range transactions {
-		if !t.IsValidType() {
-			log.Println("Invalid transaction type supplied!!!")
-			// log.Println(t.ToString())
+		if !t.Verify() {
+			log.Println("Invalid transaction!!!")
+			log.Println(t.ToString())
 			fmt.Println("Retaining old block")
-			return oldBlock, errors.New("Invalid type supplied")
+			return oldBlock, errors.New("Invalid transaction supplied")
 		}
 
-		if !t.IsAuthorized(oldBlock.Users) {
-			log.Println("User is not authorized!!!")
-			// log.Println(t.ToString())
-			fmt.Println("Retaining old block")
-			return oldBlock, errors.New("User not authorized")
-		}
-
-		if t.TransactionType == "ADD_USER" {
-			cleanTrans, err := t.VerifyAndFormatAddUserTrans(oldBlock)
-
-			if err != nil {
-				return oldBlock, err
-			}
-
-			newBlock.Users = append(newBlock.Users, cleanTrans.Message)
-			newBlock.Transactions = append(newBlock.Transactions, cleanTrans)
-			newBlock.Difficulty += 1 // The larger a user list becomes, the harder it should become to post messages
-		} else {
-			newBlock.Transactions = append(newBlock.Transactions, t.RemovePassword())
-		}
+		newBlock.Transactions = append(newBlock.Transactions, t)
 	}
-
-	hashTime := time.Now()
-	newBlock = newBlock.hashUntilValid(newBlock.Difficulty)
-	endTime := time.Now()
-	fmt.Println("Took " + strconv.Itoa(endTime.Second()-hashTime.Second()) + " seconds to mine with diff=" +
-		strconv.Itoa(newBlock.Difficulty*len(transactions)))
 
 	return newBlock, nil
-}
-
-//ValidateAddUser ensures that the message provided not only matches the correct format for adding a user,
-//but also doesn't contain an entry for adding a user that already exists
-func (oldBlock Block) ValidateAddUser(message string) (string, error) {
-	strs := strings.Split(message, ":")
-	if len(strs) < 2 {
-		return "", errors.New("Parse error of user/pass in string: " + message)
-	}
-
-	user := strs[0]
-	pass := strs[1]
-
-	for _, v := range oldBlock.Users {
-		u := strings.Split(v, ":")[0]
-		if u == user {
-			return "", errors.New("User \"" + user + "\" is already registered!")
-		}
-	}
-
-	return user + ":" + hashAuth(user, pass), nil
 }
 
 //IsBlockSequenceValid checks if an old block and a new block are capable of following one another;
