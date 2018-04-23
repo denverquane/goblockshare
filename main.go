@@ -24,7 +24,7 @@ func run() error {
 
 	globalChain := blockchain.MakeInitialChain()
 
-	muxx := network.MakeMuxRouter(globalChain)
+	muxx := network.MakeMuxRouter(&globalChain)
 
 	log.Println("Listening on ", os.Getenv("PORT"))
 	if httpAddr == "8080" {

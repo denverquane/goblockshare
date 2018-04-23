@@ -10,9 +10,9 @@ import (
 	"net/http"
 )
 
-var globalBlockchain blockchain.BlockChain
+var globalBlockchain *blockchain.BlockChain
 
-func MakeMuxRouter(chain blockchain.BlockChain) http.Handler {
+func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
 	muxRouter := mux.NewRouter()
 	globalBlockchain = chain
 
@@ -25,7 +25,7 @@ func MakeMuxRouter(chain blockchain.BlockChain) http.Handler {
 func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	data, err := json.MarshalIndent(globalBlockchain, "", "  ")
+	data, err := json.MarshalIndent(*globalBlockchain, "", "  ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,7 +63,9 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	globalBlockchain = globalBlockchain.AddTransaction(m.ConvertToFull())
+	fmt.Println("received transaction")
+	globalBlockchain.AddTransaction(m.ConvertToFull())
+	// Return some JSON response, even if the block isn't mined yet (but first validate the transaction's validity)
 
 	respondWithJSON(w, r, http.StatusCreated, globalBlockchain.GetNewestBlock())
 	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)

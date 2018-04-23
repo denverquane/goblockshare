@@ -47,21 +47,31 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain BlockChain) AddTransaction(trans transaction.FullTransaction) BlockChain {
+func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) {
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
-		return chain
+		return
 	} else {
 		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans})
 		if err != nil {
 			fmt.Print(err.Error())
-			return chain
+			return
 		}
+		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
-		chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty)
+		fmt.Println("Mining a new block")
+		go chain.processingBlock.hashUntilValid(5, c)
+		for i := 0; !(<-c); i++ {
+			if i%100000 == 0 {
+				fmt.Println("Mining...")
+			}
+			// Wait until block is mined successfully
+		}
+		fmt.Println("Successfully mined block!")
+
 		chain.Blocks = append(chain.Blocks, *chain.processingBlock)
+		// fmt.Println(len(chain.Blocks[1].Transactions))
 		chain.processingBlock = nil
-		return chain
 	}
 }
 

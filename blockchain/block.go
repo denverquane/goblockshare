@@ -65,18 +65,27 @@ func InitialBlock() Block {
 
 //hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
 //difficulty
-func (block Block) hashUntilValid(difficulty int) {
-	block.Hash = calcHash(block)
+func (block *Block) hashUntilValid(difficulty int, c chan bool) {
+	block.mux.Lock()
+	block.Hash = calcHash(*block)
+	block.mux.Unlock()
 
 	for i := 0; !isHashValid(block.Hash, difficulty); i++ {
+		c <- false
 		hexx := fmt.Sprintf("%x", i)
+		block.mux.Lock()
 		block.Nonce = hexx
-		block.Hash = calcHash(block)
+		block.Hash = calcHash(*block)
+		block.mux.Unlock()
 	}
+	c <- true
 }
 
-func (block Block) AddTransaction(trans transaction.FullTransaction) {
+func (block *Block) AddTransaction(trans transaction.FullTransaction) {
+	fmt.Println("Adding transaction to mining block")
+	block.mux.Lock()
 	block.Transactions = append(block.Transactions, trans)
+	block.mux.Unlock()
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
