@@ -44,6 +44,7 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 "originPubKeyY":"59682448553058160470866529273575025018646442288865005510432207524813798486893",
 "originAddress":"05+tccYNwv6kwMDHFHLhpT2+syGQYhcvZrIUGMkj9vE=",
 "signedMsg":"dsfgsd",
+"txref":["tx1", "tx2"],
 "r":"83272896655727237885461857009977546962509371591045400188157617593583499140053",
 "s":"77837220821200439760189315101894538440367033391263344979880555787602867385798",
 "destAddr":"UVoty8GhdxPK4ZfxNUGIGSmDcumFGk4+3Sc8R1e7D08="
@@ -64,7 +65,12 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	fmt.Println("received transaction")
-	globalBlockchain.AddTransaction(m.ConvertToFull())
+	trans := m.ConvertToFull()
+	if !trans.Verify() {
+		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
+		return
+	}
+	globalBlockchain.AddTransaction(trans)
 	// Return some JSON response, even if the block isn't mined yet (but first validate the transaction's validity)
 
 	respondWithJSON(w, r, http.StatusCreated, globalBlockchain.GetNewestBlock())

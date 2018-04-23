@@ -60,7 +60,7 @@ func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) {
 		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
 		fmt.Println("Mining a new block")
-		go chain.processingBlock.hashUntilValid(5, c)
+		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c)
 		for i := 0; !(<-c); i++ {
 			if i%100000 == 0 {
 				fmt.Println("Mining...")

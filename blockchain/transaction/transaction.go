@@ -24,13 +24,10 @@ type Transaction interface {
 	ToString() string
 }
 
-type SimpleTransaction struct {
-	Message string
-	TType   TransType
-}
-
+//TODO Alter signed so it includes the origin pubkey, origin addr, and destination!
+//Needed to verify all these important aspects of the msg for security, but also for simplicity
 type SignedTransaction struct {
-	Simple SimpleTransaction
+	Simple string
 	R, S   *big.Int
 }
 
@@ -42,10 +39,12 @@ type FullTransaction struct {
 	destination   Base64Address
 }
 
+//TODO test with sending sub-objects? Would simplify the format of the REST API/conversions considerably
 type RESTWrappedFullTransaction struct {
 	OriginPubKeyX string
 	OriginPubKeyY string
 	OriginAddress string
+	Txref         []string
 	SignedMsg     string
 	R             string
 	S             string
@@ -60,18 +59,18 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
 	y.SetString(rest.OriginPubKeyY, 10)
 	full.originPubKey = ecdsa.PublicKey{AUTHENTICATION_CURVE, x, y}
 	full.originAddr = Base64Address(rest.OriginAddress)
-	full.txRef = []string{}
+	full.txRef = rest.Txref
 	r := new(big.Int)
 	r.SetString(rest.R, 10)
 	s := new(big.Int)
 	s.SetString(rest.S, 10)
-	full.signedPayload = SignedTransaction{SimpleTransaction{rest.SignedMsg, ADD_MESSAGE}, r, s}
+	full.signedPayload = SignedTransaction{rest.SignedMsg, r, s}
 	full.destination = Base64Address(rest.DestAddr)
 	return full
 }
 
-func MakeFull(s SimpleTransaction, origin PersonalAddress, dest Base64Address) (FullTransaction, error) {
-	signed := s.SignMessage(&origin.PrivateKey)
+func MakeFull(str string, origin PersonalAddress, dest Base64Address) (FullTransaction, error) {
+	signed := SignMessage(str, &origin.PrivateKey)
 	full := FullTransaction{origin.PublicKey, origin.Address, []string{}, signed, dest}
 	if !full.Verify() {
 		return FullTransaction{}, errors.New("Generated transaction is invalid!")
@@ -79,30 +78,22 @@ func MakeFull(s SimpleTransaction, origin PersonalAddress, dest Base64Address) (
 	return full, nil
 }
 
-func (s SimpleTransaction) GetMessageBytes() []byte {
-	return []byte(s.Message)
-}
-
-func (h SimpleTransaction) SignMessage(priv *ecdsa.PrivateKey) SignedTransaction {
-	r, s, err := ecdsa.Sign(rand.Reader, priv, h.GetMessageBytes())
+func SignMessage(str string, priv *ecdsa.PrivateKey) SignedTransaction {
+	r, s, err := ecdsa.Sign(rand.Reader, priv, []byte(str))
 
 	if err != nil {
 		log.Println("Error when signing transaction!")
 		return SignedTransaction{}
 	}
-	return SignedTransaction{h, r, s}
-}
-
-func (s SimpleTransaction) ToString() string {
-	return "Message: " + s.Message + " of type: " + string(s.TType)
+	return SignedTransaction{str, r, s}
 }
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
-	return ecdsa.Verify(&key, s.Simple.GetMessageBytes(), s.R, s.S)
+	return ecdsa.Verify(&key, []byte(s.Simple), s.R, s.S)
 }
 
 func (s SignedTransaction) ToString() string {
-	return s.Simple.ToString()
+	return s.Simple
 }
 
 func (ft FullTransaction) Verify() bool {
@@ -117,7 +108,8 @@ func (ft FullTransaction) Verify() bool {
 	return true
 }
 
+//TODO This needs to be fast when hashing many transactions into a single block
 func (ft FullTransaction) ToString() string {
 	return "Public key " + ft.originPubKey.X.String() + ft.originPubKey.Y.String() + "\nand address: " + string(ft.originAddr) +
-		"\n sending " + ft.signedPayload.Simple.Message + "\nto " + string(ft.destination)
+		"\n sending " + ft.signedPayload.Simple + "\nto " + string(ft.destination)
 }
