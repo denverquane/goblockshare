@@ -25,11 +25,12 @@ func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
 func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 
-	data, err := json.MarshalIndent(*globalBlockchain, "", "  ")
+	data, err := json.MarshalIndent(*globalBlockchain, "", " ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	fmt.Println("GET chain")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
