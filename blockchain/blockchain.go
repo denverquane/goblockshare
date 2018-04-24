@@ -86,7 +86,7 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	for i := 0; i < min; i++ {
 		a := chain1.Blocks[i]
 		b := chain2.Blocks[i]
-		if calcHash(a) != calcHash(b) {
+		if a.Hash() != b.Hash() {
 			return false
 		}
 	}

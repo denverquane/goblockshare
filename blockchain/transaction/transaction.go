@@ -6,17 +6,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-)
-
-type TransType int
-
-const (
-	TEST TransType = iota
-	ADD_MESSAGE
-	ADD_FILE
-	DELETE_MESSAGE
-	ADD_USER
-	CREATE_CHANNEL
+	"crypto/sha256"
+	"encoding/hex"
 )
 
 type Transaction interface {
@@ -37,6 +28,7 @@ type FullTransaction struct {
 	TxRef         []string
 	SignedPayload SignedTransaction
 	Destination   Base64Address
+	TxID		  string
 }
 
 //TODO test with sending sub-objects? Would simplify the format of the REST API/conversions considerably
@@ -67,6 +59,7 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
 	s.SetString(rest.S, 10)
 	full.SignedPayload = SignedTransaction{rest.SignedMsg, r, s}
 	full.Destination = Base64Address(rest.DestAddr)
+	full.TxID = full.Hash()
 	return full
 }
 
@@ -115,4 +108,19 @@ func (ft FullTransaction) Verify() bool {
 func (ft FullTransaction) ToString() string {
 	return "Public key " + ft.OriginPubKeyX.String() + ft.OriginPubKeyY.String() + "\nand address: " + string(ft.OriginAddr) +
 		"\n sending " + ft.SignedPayload.Simple + "\nto " + string(ft.Destination)
+}
+
+func (ft FullTransaction) Hash() string {
+	h := sha256.New()
+	h.Write([]byte(ft.OriginPubKeyY.String()))
+	h.Write([]byte(ft.OriginPubKeyX.String()))
+	h.Write([]byte(ft.OriginAddr))
+	for _, v := range ft.TxRef {
+		h.Write([]byte(v))
+	}
+	h.Write([]byte(ft.SignedPayload.Simple))
+	h.Write([]byte(ft.SignedPayload.R.String()))
+	h.Write([]byte(ft.SignedPayload.S.String()))
+	h.Write([]byte(ft.Destination))
+	return hex.EncodeToString(h.Sum(nil))
 }
