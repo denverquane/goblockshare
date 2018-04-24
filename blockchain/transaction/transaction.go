@@ -17,8 +17,11 @@ type Transaction interface {
 //TODO Alter signed so it includes the origin pubkey, origin addr, and destination!
 //Needed to verify all these important aspects of the msg for security, but also for simplicity
 type SignedTransaction struct {
-	Simple string
-	R, S   *big.Int
+	origAddr Base64Address
+	destAddr Base64Address
+	quantity float64
+	payload  string
+	R, S   	 *big.Int
 }
 
 type FullTransaction struct {
@@ -35,9 +38,10 @@ type FullTransaction struct {
 type RESTWrappedFullTransaction struct {
 	OriginPubKeyX string
 	OriginPubKeyY string
-	OriginAddress string
+	OrigAddr string
 	Txref         []string
-	SignedMsg     string
+	Quantity      float64
+	Payload		  string
 	R             string
 	S             string
 	DestAddr      string
@@ -51,13 +55,13 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
 	y.SetString(rest.OriginPubKeyY, 10)
 	full.OriginPubKeyX = x
 	full.OriginPubKeyY = y
-	full.OriginAddr = Base64Address(rest.OriginAddress)
+	full.OriginAddr = Base64Address(rest.OrigAddr)
 	full.TxRef = rest.Txref
 	r := new(big.Int)
 	r.SetString(rest.R, 10)
 	s := new(big.Int)
 	s.SetString(rest.S, 10)
-	full.SignedPayload = SignedTransaction{rest.SignedMsg, r, s}
+	full.SignedPayload = SignedTransaction{Base64Address(rest.OrigAddr), Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, r, s}
 	full.Destination = Base64Address(rest.DestAddr)
 	full.TxID = full.Hash()
 	return full
@@ -72,14 +76,15 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
 //	return full, nil
 //}
 
-func SignMessage(str string, priv *ecdsa.PrivateKey) SignedTransaction {
+// TODO Sign every aspect of the transaction (sign an unsigned transaction? -> have a getBytes()?)
+func SignMessage(orig Base64Address, dest Base64Address, quantity float64, str string, priv *ecdsa.PrivateKey) SignedTransaction {
 	r, s, err := ecdsa.Sign(rand.Reader, priv, []byte(str))
 
 	if err != nil {
 		log.Println("Error when signing transaction!")
 		return SignedTransaction{}
 	}
-	return SignedTransaction{str, r, s}
+	return SignedTransaction{orig, dest, quantity, str,  r, s}
 }
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
