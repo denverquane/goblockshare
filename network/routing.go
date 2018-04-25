@@ -41,13 +41,17 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 /* Below is an example of the input format for writing a transaction via the REST API:
 
 {
-"originPubKeyX":"41465825910018896748506442457299597466934834109962972962658476739222369973795",
-"originPubKeyY":"59682448553058160470866529273575025018646442288865005510432207524813798486893",
-"originAddress":"05+tccYNwv6kwMDHFHLhpT2+syGQYhcvZrIUGMkj9vE=",
-"signedMsg":"dsfgsd",
-"txref":["tx1", "tx2"],
-"r":"83272896655727237885461857009977546962509371591045400188157617593583499140053",
-"s":"77837220821200439760189315101894538440367033391263344979880555787602867385798",
+"origin":
+	{
+		"origAddr":"05+tccYNwv6kwMDHFHLhpT2+syGQYhcvZrIUGMkj9vE=",
+		"originPubKeyX": 41465825910018896748506442457299597466934834109962972962658476739222369973795,
+		"originPubKeyY": 59682448553058160470866529273575025018646442288865005510432207524813798486893
+	},
+"txref":[],
+"quantity":5.666,
+"payload":"gh",
+"r":83272896655727237885461857009977546962509371591045400188157617593583499140053,
+"s":77837220821200439760189315101894538440367033391263344979880555787602867385798,
 "destAddr":"UVoty8GhdxPK4ZfxNUGIGSmDcumFGk4+3Sc8R1e7D08="
 }
 
@@ -65,9 +69,9 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	fmt.Println("received transaction")
-	trans := m.ConvertToFull()
-	if !trans.Verify() {
+	trans, _ := m.ConvertToFull()
+	fmt.Println(trans.SignedTrans.ToString())
+	if !trans.SignedTrans.Verify() {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
 		return
 	}

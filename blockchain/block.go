@@ -93,7 +93,7 @@ func (block Block) Hash() string {
 
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
-		record += v.ToString()
+		record += string(v.Hash())
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
@@ -120,9 +120,9 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.PrevHash = oldBlock.Hashed
 
 	for _, t := range transactions {
-		if !t.Verify() {
+		if !t.SignedTrans.Verify() {
 			log.Println("Invalid transaction!!!")
-			log.Println(t.ToString())
+			log.Println(t.SignedTrans.ToString())
 			fmt.Println("Retaining old block")
 			return oldBlock, errors.New("Invalid transaction supplied")
 		}

@@ -2,9 +2,7 @@ package transaction
 
 import (
 	"crypto/ecdsa"
-	"crypto/rand"
 	"fmt"
-	"log"
 	"math/big"
 	"crypto/sha256"
 	"encoding/hex"
@@ -14,10 +12,24 @@ type Transaction interface {
 	ToString() string
 }
 
-//TODO Alter signed so it includes the origin pubkey, origin addr, and destination!
-//Needed to verify all these important aspects of the msg for security, but also for simplicity
+type OriginInfo struct {
+	OriginPubKeyX big.Int
+	OriginPubKeyY big.Int
+	OrigAddr string
+}
+
+type RESTWrappedFullTransaction struct {
+	Origin   	  OriginInfo
+	Txref         []string
+	Quantity      float64
+	Payload		  string
+	R             big.Int
+	S             big.Int
+	DestAddr      string
+}
+
 type SignedTransaction struct {
-	origAddr Base64Address
+	Origin 	 OriginInfo
 	destAddr Base64Address
 	quantity float64
 	payload  string
@@ -25,46 +37,17 @@ type SignedTransaction struct {
 }
 
 type FullTransaction struct {
-	OriginPubKeyX  *big.Int
-	OriginPubKeyY  *big.Int
-	OriginAddr    Base64Address
+	SignedTrans SignedTransaction
 	TxRef         []string
-	SignedPayload SignedTransaction
-	Destination   Base64Address
 	TxID		  string
 }
 
-//TODO test with sending sub-objects? Would simplify the format of the REST API/conversions considerably
-type RESTWrappedFullTransaction struct {
-	OriginPubKeyX string
-	OriginPubKeyY string
-	OrigAddr string
-	Txref         []string
-	Quantity      float64
-	Payload		  string
-	R             string
-	S             string
-	DestAddr      string
-}
-
-func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
+func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) {
 	var full = FullTransaction{}
-	x := new(big.Int)
-	x.SetString(rest.OriginPubKeyX, 10)
-	y := new(big.Int)
-	y.SetString(rest.OriginPubKeyY, 10)
-	full.OriginPubKeyX = x
-	full.OriginPubKeyY = y
-	full.OriginAddr = Base64Address(rest.OrigAddr)
+	full.SignedTrans = SignedTransaction{rest.Origin, Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, &rest.R, &rest.S}
 	full.TxRef = rest.Txref
-	r := new(big.Int)
-	r.SetString(rest.R, 10)
-	s := new(big.Int)
-	s.SetString(rest.S, 10)
-	full.SignedPayload = SignedTransaction{Base64Address(rest.OrigAddr), Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, r, s}
-	full.Destination = Base64Address(rest.DestAddr)
-	full.TxID = full.Hash()
-	return full
+	full.TxID = hex.EncodeToString(full.Hash())
+	return full, nil
 }
 
 //func MakeFull(str string, origin PersonalAddress, dest Base64Address) (FullTransaction, error) {
@@ -77,31 +60,27 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() FullTransaction {
 //}
 
 // TODO Sign every aspect of the transaction (sign an unsigned transaction? -> have a getBytes()?)
-func SignMessage(orig Base64Address, dest Base64Address, quantity float64, str string, priv *ecdsa.PrivateKey) SignedTransaction {
-	r, s, err := ecdsa.Sign(rand.Reader, priv, []byte(str))
-
-	if err != nil {
-		log.Println("Error when signing transaction!")
-		return SignedTransaction{}
-	}
-	return SignedTransaction{orig, dest, quantity, str,  r, s}
-}
+//func SignMessage(orig Base64Address, dest Base64Address, quantity float64, str string, priv *ecdsa.PrivateKey) SignedTransaction {
+//	r, s, err := ecdsa.Sign(rand.Reader, priv, []byte(str))
+//
+//	if err != nil {
+//		log.Println("Error when signing transaction!")
+//		return SignedTransaction{}
+//	}
+//	return SignedTransaction{orig, dest, quantity, str,  r, s}
+//}
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
-	return ecdsa.Verify(&key, []byte(s.Simple), s.R, s.S)
+	return ecdsa.Verify(&key, []byte(s.payload), s.R, s.S)
 }
 
-func (s SignedTransaction) ToString() string {
-	return s.Simple
-}
+func (st SignedTransaction) Verify() bool {
+	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, &st.Origin.OriginPubKeyX, &st.Origin.OriginPubKeyY}
 
-func (ft FullTransaction) Verify() bool {
-	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, ft.OriginPubKeyX, ft.OriginPubKeyY}
-
-	if !ft.SignedPayload.VerifyWithKey(key) { //signed transaction isn't verified with the public key
+	if !st.VerifyWithKey(key) { //signed transaction isn't verified with the public key
 		fmt.Println("Signed doesnt verify")
 		return false
-	} else if HashPublicToB64Address(key) != ft.OriginAddr { //public key does not match up with the address
+	} else if HashPublicToB64Address(key) != Base64Address(st.Origin.OrigAddr) { //public key does not match up with the address
 		fmt.Println("public doesnt match address")
 		return false
 	}
@@ -110,22 +89,44 @@ func (ft FullTransaction) Verify() bool {
 }
 
 //TODO This needs to be fast when hashing many transactions into a single block
-func (ft FullTransaction) ToString() string {
-	return "Public key " + ft.OriginPubKeyX.String() + ft.OriginPubKeyY.String() + "\nand address: " + string(ft.OriginAddr) +
-		"\n sending " + ft.SignedPayload.Simple + "\nto " + string(ft.Destination)
+//func (ft FullTransaction) ToString() string {
+//	return "Public key " + ft.OriginPubKeyX.String() + ft.OriginPubKeyY.String() + "\nand address: " + string(ft.OriginAddr) +
+//		"\n sending " + ft.SignedPayload.payload + "\nto " + string(ft.Destination)
+//}
+
+func (oi OriginInfo) ToString() string {
+	return oi.OrigAddr + " with x=" + oi.OriginPubKeyX.String() + " and y=" + oi.OriginPubKeyY.String()
 }
 
-func (ft FullTransaction) Hash() string {
+func (st SignedTransaction) ToString() string {
+	return st.Origin.ToString()
+}
+
+func (oi OriginInfo) Hash() []byte {
 	h := sha256.New()
-	h.Write([]byte(ft.OriginPubKeyY.String()))
-	h.Write([]byte(ft.OriginPubKeyX.String()))
-	h.Write([]byte(ft.OriginAddr))
+	h.Write(oi.OriginPubKeyX.Bytes())
+	h.Write(oi.OriginPubKeyY.Bytes())
+	h.Write([]byte(oi.OrigAddr))
+	return h.Sum(nil)
+}
+
+func (st SignedTransaction) Hash() []byte {
+	h := sha256.New()
+	h.Write(st.Origin.Hash())
+	h.Write([]byte(st.destAddr))
+	//TODO fix these
+	//h.Write([]byte(st.quantity))
+	//h.Write([]byte(st.R))
+	//h.Write([]byte(st.S))
+	h.Write([]byte(st.payload))
+	return h.Sum(nil)
+}
+
+func (ft FullTransaction) Hash() []byte {
+	h := sha256.New()
+	h.Write(ft.SignedTrans.Hash())
 	for _, v := range ft.TxRef {
 		h.Write([]byte(v))
 	}
-	h.Write([]byte(ft.SignedPayload.Simple))
-	h.Write([]byte(ft.SignedPayload.R.String()))
-	h.Write([]byte(ft.SignedPayload.S.String()))
-	h.Write([]byte(ft.Destination))
-	return hex.EncodeToString(h.Sum(nil))
+	return h.Sum(nil)
 }
