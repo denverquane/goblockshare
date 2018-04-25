@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"log"
+	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,7 +23,7 @@ type Block struct {
 	Index        int64
 	Timestamp    string
 	Transactions []transaction.FullTransaction
-	Hashed         string
+	Hashed       string
 	PrevHash     string
 	Difficulty   int
 	Nonce        string
@@ -44,12 +45,17 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock() Block {
+func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	initBlock.Transactions = make([]transaction.FullTransaction, 0)
+	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Payload: "Initial block!",
+		R: &(big.Int{}), S: &(big.Int{})}
+	full := transaction.FullTransaction{simplePayout, []string{}, ""}
+	full.TxID = string(full.Hash())
+	initBlock.Transactions = make([]transaction.FullTransaction, 1)
+	initBlock.Transactions[0] = full
 	//initBlock.PrevHash = "GoBlockShare Version: " + version
 	initBlock.Hashed = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
@@ -93,7 +99,7 @@ func (block Block) Hash() string {
 
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
-		record += v.ToString()
+		record += string(v.Hash())
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
@@ -120,9 +126,9 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.PrevHash = oldBlock.Hashed
 
 	for _, t := range transactions {
-		if !t.Verify() {
+		if !t.SignedTrans.Verify() {
 			log.Println("Invalid transaction!!!")
-			log.Println(t.ToString())
+			log.Println(t.SignedTrans.ToString())
 			fmt.Println("Retaining old block")
 			return oldBlock, errors.New("Invalid transaction supplied")
 		}
