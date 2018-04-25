@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"crypto/sha256"
 	"encoding/hex"
+	"crypto/rand"
+	"log"
 )
 
 type Transaction interface {
@@ -13,9 +15,9 @@ type Transaction interface {
 }
 
 type OriginInfo struct {
-	OriginPubKeyX big.Int
-	OriginPubKeyY big.Int
-	OrigAddr string
+	PubKeyX big.Int
+	PubKeyY big.Int
+	Address string
 }
 
 type RESTWrappedFullTransaction struct {
@@ -60,27 +62,35 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) 
 //}
 
 // TODO Sign every aspect of the transaction (sign an unsigned transaction? -> have a getBytes()?)
-//func SignMessage(orig Base64Address, dest Base64Address, quantity float64, str string, priv *ecdsa.PrivateKey) SignedTransaction {
-//	r, s, err := ecdsa.Sign(rand.Reader, priv, []byte(str))
-//
-//	if err != nil {
-//		log.Println("Error when signing transaction!")
-//		return SignedTransaction{}
-//	}
-//	return SignedTransaction{orig, dest, quantity, str,  r, s}
-//}
+func (st SignedTransaction) SignMessage(priv *ecdsa.PrivateKey) SignedTransaction {
+	var arr = []byte(st.Origin.Hash())
+	arr = append(arr, []byte(st.destAddr)...)
+	// arr = append(arr, byte[](strconv.FormatFloat(st.quantity, 64))...)
+	arr = append(arr, []byte(st.payload)...)
+	arr = append(arr, st.R.Bytes()...)
+	arr = append(arr, st.S.Bytes()...)
+	r, s, err := ecdsa.Sign(rand.Reader, priv, arr)
+
+	if err != nil {
+		log.Println("Error when signing transaction!")
+		return SignedTransaction{}
+	}
+	st.R = r
+	st.S = s
+	return st
+}
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
 	return ecdsa.Verify(&key, []byte(s.payload), s.R, s.S)
 }
 
 func (st SignedTransaction) Verify() bool {
-	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, &st.Origin.OriginPubKeyX, &st.Origin.OriginPubKeyY}
+	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, &st.Origin.PubKeyX, &st.Origin.PubKeyY}
 
 	if !st.VerifyWithKey(key) { //signed transaction isn't verified with the public key
 		fmt.Println("Signed doesnt verify")
 		return false
-	} else if HashPublicToB64Address(key) != Base64Address(st.Origin.OrigAddr) { //public key does not match up with the address
+	} else if HashPublicToB64Address(key) != Base64Address(st.Origin.Address) { //public key does not match up with the address
 		fmt.Println("public doesnt match address")
 		return false
 	}
@@ -90,12 +100,12 @@ func (st SignedTransaction) Verify() bool {
 
 //TODO This needs to be fast when hashing many transactions into a single block
 //func (ft FullTransaction) ToString() string {
-//	return "Public key " + ft.OriginPubKeyX.String() + ft.OriginPubKeyY.String() + "\nand address: " + string(ft.OriginAddr) +
+//	return "Public key " + ft.OriginPubKeyX.String() + ft.PubKeyY.String() + "\nand address: " + string(ft.OriginAddr) +
 //		"\n sending " + ft.SignedPayload.payload + "\nto " + string(ft.Destination)
 //}
 
 func (oi OriginInfo) ToString() string {
-	return oi.OrigAddr + " with x=" + oi.OriginPubKeyX.String() + " and y=" + oi.OriginPubKeyY.String()
+	return oi.Address + " with x=" + oi.PubKeyX.String() + " and y=" + oi.PubKeyY.String()
 }
 
 func (st SignedTransaction) ToString() string {
@@ -104,9 +114,9 @@ func (st SignedTransaction) ToString() string {
 
 func (oi OriginInfo) Hash() []byte {
 	h := sha256.New()
-	h.Write(oi.OriginPubKeyX.Bytes())
-	h.Write(oi.OriginPubKeyY.Bytes())
-	h.Write([]byte(oi.OrigAddr))
+	h.Write(oi.PubKeyX.Bytes())
+	h.Write(oi.PubKeyY.Bytes())
+	h.Write([]byte(oi.Address))
 	return h.Sum(nil)
 }
 
@@ -116,8 +126,8 @@ func (st SignedTransaction) Hash() []byte {
 	h.Write([]byte(st.destAddr))
 	//TODO fix these
 	//h.Write([]byte(st.quantity))
-	//h.Write([]byte(st.R))
-	//h.Write([]byte(st.S))
+	h.Write(st.R.Bytes())
+	h.Write(st.S.Bytes())
 	h.Write([]byte(st.payload))
 	return h.Sum(nil)
 }
