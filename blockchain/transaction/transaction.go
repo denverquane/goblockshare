@@ -35,7 +35,7 @@ type RESTWrappedFullTransaction struct {
 	DestAddr string
 }
 
-func (oi OriginInfo) Hash() []byte {
+func (oi OriginInfo) GetHash() []byte {
 	h := sha256.New()
 	h.Write(oi.PubKeyX.Bytes())
 	h.Write(oi.PubKeyY.Bytes())
@@ -51,9 +51,9 @@ type SignedTransaction struct {
 	R, S     *big.Int
 }
 
-func (st SignedTransaction) Hash(haveRSbeenSet bool) []byte {
+func (st SignedTransaction) GetHash(haveRSbeenSet bool) []byte {
 	h := sha256.New()
-	h.Write(st.Origin.Hash())
+	h.Write(st.Origin.GetHash())
 	h.Write([]byte(st.DestAddr))
 	// -1 as the precision arg gets the # to 64bit precision intuitively
 	h.Write([]byte(strconv.FormatFloat(st.Quantity, 'f', -1, 64)))
@@ -74,9 +74,9 @@ type FullTransaction struct {
 	TxID        string
 }
 
-func (ft FullTransaction) Hash() []byte {
+func (ft FullTransaction) GetHash() []byte {
 	h := sha256.New()
-	h.Write(ft.SignedTrans.Hash(true))
+	h.Write(ft.SignedTrans.GetHash(true))
 	for _, v := range ft.TxRef {
 		h.Write([]byte(v))
 	}
@@ -87,18 +87,18 @@ func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) 
 	var full = FullTransaction{}
 	full.SignedTrans = SignedTransaction{rest.Origin, Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, &rest.R, &rest.S}
 	full.TxRef = rest.Txref
-	full.TxID = hex.EncodeToString(full.Hash())
+	full.TxID = hex.EncodeToString(full.GetHash())
 	return full, nil
 }
 
 func (st SignedTransaction) MakeFull(txref []string) FullTransaction {
 	full := FullTransaction{st, txref, ""}
-	full.TxID = hex.EncodeToString(full.Hash())
+	full.TxID = hex.EncodeToString(full.GetHash())
 	return full
 }
 
 func (st SignedTransaction) SignMessage(priv *ecdsa.PrivateKey) SignedTransaction {
-	hashed := st.Hash(false)
+	hashed := st.GetHash(false)
 	r, s, err := ecdsa.Sign(rand.Reader, priv, hashed)
 
 	if err != nil {
@@ -111,7 +111,7 @@ func (st SignedTransaction) SignMessage(priv *ecdsa.PrivateKey) SignedTransactio
 }
 
 func (s SignedTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
-	return ecdsa.Verify(&key, s.Hash(false), s.R, s.S)
+	return ecdsa.Verify(&key, s.GetHash(false), s.R, s.S)
 }
 
 func (st SignedTransaction) Verify() bool {

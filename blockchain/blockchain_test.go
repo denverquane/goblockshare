@@ -2,8 +2,8 @@ package blockchain
 
 import (
 	// "fmt"
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestMakeInitialChain(t *testing.T) {

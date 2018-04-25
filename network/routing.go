@@ -76,10 +76,12 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	globalBlockchain.AddTransaction(trans)
-	// Return some JSON response, even if the block isn't mined yet (but first validate the transaction's validity)
-
-	respondWithJSON(w, r, http.StatusCreated, globalBlockchain.GetNewestBlock())
+	message, success := globalBlockchain.AddTransaction(trans)
+	if !success {
+		respondWithJSON(w, r, http.StatusBadRequest, message)
+	} else {
+		respondWithJSON(w, r, http.StatusCreated, message)
+	}
 	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)
 }
 

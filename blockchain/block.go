@@ -23,7 +23,7 @@ type Block struct {
 	Index        int64
 	Timestamp    string
 	Transactions []transaction.FullTransaction
-	Hashed       string
+	Hash         string
 	PrevHash     string
 	Difficulty   int
 	Nonce        string
@@ -34,7 +34,7 @@ type Block struct {
 func (block Block) ToString() string {
 	str := "Block: \n[\n   Index: " + strconv.Itoa(int(block.Index)) + "\n   Time: " + block.Timestamp +
 		"\n   Total Transactions: " + strconv.Itoa(len(block.Transactions)) + "\n"
-	str += "   Hash: " + block.Hashed[0:5] + "...\n   PrevHash: "
+	str += "   Hash: " + block.Hash[0:5] + "...\n   PrevHash: "
 	if len(block.PrevHash) > 4 {
 		str += block.PrevHash[0:5] + "...\n]\n"
 	} else {
@@ -53,17 +53,17 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Payload: "Initial block!",
 		R: &(big.Int{}), S: &(big.Int{})}
 	full := transaction.FullTransaction{simplePayout, []string{}, ""}
-	full.TxID = string(full.Hash())
+	full.TxID = hex.EncodeToString(full.GetHash())
 	initBlock.Transactions = make([]transaction.FullTransaction, 1)
 	initBlock.Transactions[0] = full
 	//initBlock.PrevHash = "GoBlockShare Version: " + version
-	initBlock.Hashed = t.String() //placeholder until we calculate the actual hash
+	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
-	for i := 0; !isHashValid(initBlock.Hashed, 3); i++ {
+	for i := 0; !isHashValid(initBlock.Hash, 3); i++ {
 		hexx := fmt.Sprintf("%x", i)
 		initBlock.Nonce = hexx
-		initBlock.Hashed = initBlock.Hash()
+		initBlock.Hash = initBlock.GetHash()
 	}
 
 	return initBlock
@@ -73,15 +73,15 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 //difficulty
 func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 	block.mux.Lock()
-	block.Hashed = block.Hash()
+	block.Hash = block.GetHash()
 	block.mux.Unlock()
 
-	for i := 0; !isHashValid(block.Hashed, difficulty); i++ {
+	for i := 0; !isHashValid(block.Hash, difficulty); i++ {
 		c <- false
 		hexx := fmt.Sprintf("%x", i)
 		block.mux.Lock()
 		block.Nonce = hexx
-		block.Hashed = block.Hash()
+		block.Hash = block.GetHash()
 		block.mux.Unlock()
 	}
 	c <- true
@@ -95,11 +95,11 @@ func (block *Block) AddTransaction(trans transaction.FullTransaction) {
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
-func (block Block) Hash() string {
+func (block Block) GetHash() string {
 
 	record := string(block.Index) + block.Timestamp
 	for _, v := range block.Transactions {
-		record += string(v.Hash())
+		record += string(v.GetHash())
 	}
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
@@ -123,7 +123,7 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.Index = oldBlock.Index + 1
 	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Difficulty = oldBlock.Difficulty
-	newBlock.PrevHash = oldBlock.Hashed
+	newBlock.PrevHash = oldBlock.Hash
 
 	for _, t := range transactions {
 		if !t.SignedTrans.Verify() {
@@ -148,13 +148,13 @@ func IsBlockSequenceValid(newBlock, oldBlock Block) bool {
 		return false
 	}
 
-	if oldBlock.Hashed != newBlock.PrevHash {
+	if oldBlock.Hash != newBlock.PrevHash {
 		log.Println(newBlock.ToString() + "has a prevHash that doesn't match the hash of:" + oldBlock.ToString())
 		return false
 	}
 
-	str := newBlock.Hash()
-	if str != newBlock.Hashed {
+	str := newBlock.GetHash()
+	if str != newBlock.Hash {
 		log.Println(newBlock.ToString() + "has a hash that doesn't match: " + str)
 		return false
 	}

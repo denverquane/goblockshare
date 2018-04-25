@@ -7,7 +7,7 @@ import (
 func TestInitialBlock(t *testing.T) {
 	block := InitialBlock("")
 
-	if block.Index != 0 || block.Hash() != block.Hashed {
+	if block.Index != 0 || block.Hash() != block.Hash {
 		t.Fail()
 	}
 }
@@ -27,13 +27,13 @@ func TestIsBlockSequenceValid(t *testing.T) {
 	}
 
 	//changing the prev hash as well shouldnt fix it
-	failBlock.PrevHash = block.Hashed
+	failBlock.PrevHash = block.Hash
 	if IsBlockSequenceValid(failBlock, block) {
 		t.Fail()
 	}
 
 	//Rehashing *should* fix it!
-	failBlock.Hashed = failBlock.Hash()
+	failBlock.Hash = failBlock.Hash()
 	if !IsBlockSequenceValid(failBlock, block) {
 		t.Fail()
 	}

@@ -47,38 +47,41 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) {
+func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) (string, bool) {
 	balances := chain.GetAddressBalance(trans.SignedTrans.Origin.Address)
 	if balances["REP"] <= trans.SignedTrans.Quantity {
-		fmt.Println("Insufficient balance! Invalid transaction!")
-		return
+		return "Insufficient balance! Invalid transaction!", false
 	}
 
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
-		return
+		fmt.Println("Added transaction to mining block")
+		return "Added transaction to currently mining block", true
 	} else {
 		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans})
 		if err != nil {
-			fmt.Print(err.Error())
-			return
+			return err.Error(), false
 		}
 		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
 		fmt.Println("Mining a new block")
-		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c)
-		for i := 0; !(<-c); i++ {
-			if i%100000 == 0 {
-				fmt.Println("Mining...")
-			}
-			// Wait until block is mined successfully
-		}
-		fmt.Println("Successfully mined block!")
-
-		chain.Blocks = append(chain.Blocks, *chain.processingBlock)
-		// fmt.Println(len(chain.Blocks[1].Transactions))
-		chain.processingBlock = nil
+		go chain.processingBlock.hashUntilValid(5, c)
+		go chain.waitForProcessingSwap(c)
+		return "Added transaction!", true
 	}
+}
+
+func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
+	for i := 0; !(<-c); i++ {
+		if i%100000 == 0 {
+			fmt.Println("Mining...")
+		}
+		// Wait until block is mined successfully
+	}
+	fmt.Println("Successfully mined block!")
+	chain.Blocks = append(chain.Blocks, *chain.processingBlock)
+	// fmt.Println(len(chain.Blocks[1].Transactions))
+	chain.processingBlock = nil
 }
 
 func (chain BlockChain) GetAddressBalance(addr transaction.Base64Address) map[string]float64 {
@@ -108,7 +111,7 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	for i := 0; i < min; i++ {
 		a := chain1.Blocks[i]
 		b := chain2.Blocks[i]
-		if a.Hash() != b.Hash() {
+		if a.GetHash() != b.GetHash() {
 			return false
 		}
 	}
