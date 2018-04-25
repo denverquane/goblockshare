@@ -48,6 +48,12 @@ func (chain BlockChain) IsValid() bool {
 }
 
 func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) {
+	balances := chain.GetAddressBalance(trans.SignedTrans.Origin.Address)
+	if balances["REP"] <= trans.SignedTrans.Quantity {
+		fmt.Println("Insufficient balance! Invalid transaction!")
+		return
+	}
+
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
 		return
@@ -75,6 +81,22 @@ func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) {
 	}
 }
 
+func (chain BlockChain) GetAddressBalance(addr transaction.Base64Address) map[string]float64 {
+	balances := make(map[string]float64, 1)
+	//TODO currency
+	balances["REP"] = 0.0
+	for _, block := range chain.Blocks {
+		for _, trans := range block.Transactions {
+			if trans.SignedTrans.Origin.Address == addr {
+				balances["REP"] -= trans.SignedTrans.Quantity
+			} else if trans.SignedTrans.DestAddr == addr {
+				balances["REP"] += trans.SignedTrans.Quantity
+			}
+		}
+	}
+	return balances
+}
+
 func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	var min = 0
 	if chain1.Len() > chain2.Len() {
@@ -97,9 +119,9 @@ func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
 }
 
-func MakeInitialChain() BlockChain {
+func MakeInitialChain(payoutAddr transaction.Base64Address) BlockChain {
 	chain := BlockChain{Blocks: make([]Block, 1)}
-	chain.Blocks[0] = InitialBlock()
+	chain.Blocks[0] = InitialBlock(payoutAddr)
 	return chain
 }
 
