@@ -21,7 +21,7 @@ var Wallet2 wallet.Wallet
 func main() {
 	Wallet1 = wallet.MakeNewWallet()
 	Wallet2 = wallet.MakeNewWallet()
-	Signed = Wallet1.MakeTransaction(5.99, Wallet2.GetAddress().Address)
+	Signed = Wallet1.MakeTransaction(5.99, "REP", Wallet2.GetAddress().Address)
 	fmt.Println(Signed.ToString())
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -38,10 +38,11 @@ func run() error {
 
 	/************ Testing wallet block ***************/
 
-	globalChain.AddTransaction(Signed.MakeFull([]string{})) //empty TXREF for now
-	Wallet1.InitializeBalances(globalChain)
+	message, _ := globalChain.AddTransaction(Signed.MakeFull([]string{})) //empty TXREF for now
+	fmt.Println(message)
+	Wallet1.UpdateBalances(globalChain)
 	fmt.Println(Wallet1.GetBalances())
-	Wallet2.InitializeBalances(globalChain)
+	Wallet2.UpdateBalances(globalChain)
 	fmt.Println(Wallet2.GetBalances())
 
 	/*************************************************/
@@ -51,7 +52,12 @@ func run() error {
 		if scanner.Text() == "done" || scanner.Text() == "quit" {
 			break
 		}
-		fmt.Println(scanner.Text())
+		if scanner.Text() == "refresh" {
+			Wallet1.UpdateBalances(globalChain)
+			Wallet2.UpdateBalances(globalChain)
+		} else {
+			fmt.Println(scanner.Text())
+		}
 	}
 
 	if scanner.Err() != nil {

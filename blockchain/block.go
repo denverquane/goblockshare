@@ -50,13 +50,19 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Payload: "Initial block!",
+	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Currency: "REP", Payload: "Initial block!",
 		R: &(big.Int{}), S: &(big.Int{})}
 	full := transaction.FullTransaction{simplePayout, []string{}, ""}
 	full.TxID = hex.EncodeToString(full.GetHash())
 	initBlock.Transactions = make([]transaction.FullTransaction, 1)
 	initBlock.Transactions[0] = full
-	//initBlock.PrevHash = "GoBlockShare Version: " + version
+
+	//simplePayout1 := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 1, Currency: "TOKE", Payload: "Initial block!",
+	//	R: &(big.Int{}), S: &(big.Int{})}
+	//full1 := transaction.FullTransaction{simplePayout1, []string{}, ""}
+	//full1.TxID = hex.EncodeToString(full1.GetHash())
+	//initBlock.Transactions[1] = full1
+
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
@@ -87,6 +93,7 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 	c <- true
 }
 
+//TODO check the transaction with the block_rules whenever we add (prevent double-spending, for example)
 func (block *Block) AddTransaction(trans transaction.FullTransaction) {
 	fmt.Println("Adding transaction to mining block")
 	block.mux.Lock()
