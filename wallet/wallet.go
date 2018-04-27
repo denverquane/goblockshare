@@ -3,12 +3,12 @@ package wallet
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"strconv"
-	"encoding/hex"
 )
 
 //This is the size used for generating the personal decryption keys, NOT the channel decryption keys

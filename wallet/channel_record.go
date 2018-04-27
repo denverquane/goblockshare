@@ -3,10 +3,10 @@ package wallet
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"fmt"
-	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 )
 
 //TODO when making a channel, we need to be aware of which users actually have the token that we sent them, and only
