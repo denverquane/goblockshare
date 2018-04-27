@@ -8,6 +8,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	//"crypto/x509"
+	//"encoding/pem"
 )
 
 type Base64Address string
@@ -17,7 +19,7 @@ var AUTHENTICATION_CURVE = elliptic.P256()
 // See https://golang.org/src/crypto/ecdsa/ecdsa_test.go
 
 type PersonalAddress struct {
-	PrivateKey ecdsa.PrivateKey
+	PrivateKey ecdsa.PrivateKey //TODO Encrypt and save locally
 	PublicKey  ecdsa.PublicKey
 	Address    Base64Address
 }
@@ -42,6 +44,20 @@ func GenerateNewPersonalAddress() PersonalAddress {
 		fmt.Println("invalid char, regenerating")
 		return GenerateNewPersonalAddress()
 	}
+
+	/******************* Testing encoding a public/private key pair in pem format *********************/
+	//PubASN1, err := x509.MarshalPKIXPublicKey(&priv.PublicKey)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//	// do something about it
+	//}
+	//
+	//pubBytes := pem.EncodeToMemory(&pem.Block{
+	//	Type:  "ECDSA PUBLIC KEY",
+	//	Bytes: PubASN1,
+	//})
+	//fmt.Println(string(pubBytes))
+	/**************************************************************************************************/
 
 	fmt.Println("New Key Pair created")
 	return PersonalAddress{*priv, priv.PublicKey, HashPublicToB64Address(priv.PublicKey)}
