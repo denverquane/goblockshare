@@ -1,14 +1,18 @@
 package wallet
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"strconv"
-	"crypto/x509"
-	"encoding/pem"
-	"crypto/rsa"
+	"encoding/hex"
 )
+
+//This is the size used for generating the personal decryption keys, NOT the channel decryption keys
+const RSA_BIT_SIZE = 2048
 
 type Wallet struct {
 	lastProcessedBlock int
@@ -53,11 +57,20 @@ func (wallet *Wallet) UpdateBalances(blockchain blockchain.BlockChain) {
 	}
 
 	newCurrencies := wallet.getNewTokenRecords(blockchain)
-	//for _, v := range newCurrencies {
-	//	fmt.Println(v.channelPublic)
-	//	signed := v.MakeSendMyPublicTransaction()
-	//	fmt.Println(signed.ToString())
-	//}
+	for _, v := range newCurrencies {
+		fmt.Println(v.channelPublic)
+		signed := v.makeTransactionForMyKey()
+		fmt.Println("Sending back trans")
+		fmt.Println(signed.Payload)
+		full := transaction.FullTransaction{signed, []string{}, ""}
+		full.TxID = hex.EncodeToString(full.GetHash())
+		message, added := blockchain.AddTransaction(full)
+		if added {
+			v.status = SentMyPubKey
+		}
+		fmt.Println(message)
+		//bytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, &key, []byte(signed.Payload), []byte("key"))
+	}
 	wallet.ChannelRecords = mergeChannelMaps(wallet.ChannelRecords, newCurrencies)
 
 	wallet.lastProcessedBlock = int(blockchain.GetNewestBlock().Index)
@@ -82,7 +95,6 @@ func (wallet Wallet) getNewTokenRecords(chain blockchain.BlockChain) map[string]
 										tx.SignedTrans.Origin.Address, addr)
 									//make a new channel record
 
-
 									block, _ := pem.Decode([]byte(tx.SignedTrans.Payload))
 									if block == nil {
 										fmt.Println("failed to parse PEM block containing the key")
@@ -92,18 +104,15 @@ func (wallet Wallet) getNewTokenRecords(chain blockchain.BlockChain) map[string]
 									fmt.Println(pubkey)
 									record.channelPublic = *pubkey.(*rsa.PublicKey)
 
-									//switch pub := pubkey.(type) {
-									//	case *rsa.PublicKey:
-									//		record.channelPublic = *pub
-									//		fmt.Println("\nHEYRecive\n")
-									//		fmt.Println(record.channelPublic)
-									//}
-
 									record.status = ReceivedTokenAndChannelPub
 									currencies[tx.SignedTrans.Currency] = record
 								}
 							}
 						}
+					} else {
+						fmt.Println("Received a message from a known channel")
+						//TODO we know that the channel exists. If we receive a message,
+						//it *should* contain the next stage of our channel recording (or is a general channel message)
 					}
 				}
 			}

@@ -51,7 +51,7 @@ func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) (stri
 	balance := chain.GetAddrBalanceFromInclusiveIndex(0, trans.SignedTrans.Origin.Address, trans.SignedTrans.Currency)
 	fmt.Println("Checking balance of:" + trans.SignedTrans.Currency)
 	fmt.Println(balance)
-	if balance <= trans.SignedTrans.Quantity {
+	if balance < trans.SignedTrans.Quantity {
 		return "Insufficient balance! Invalid transaction!", false
 	}
 

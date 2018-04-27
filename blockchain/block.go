@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
@@ -17,8 +18,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"encoding/pem"
 )
+
+//MUST be smaller than the bitsize used for private key generation
+const RSA_BITSIZE = 2048
 
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
 //overall state of the chain, and successive blocks of the chain. For example, a user leaving a comment on a channel
@@ -61,11 +64,9 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	initBlock.Transactions = make([]transaction.FullTransaction, 2)
 	initBlock.Transactions[0] = full
 
-
-
 	/****************************** Testing Tokens ************************************/
 
-	key, _ := rsa.GenerateKey(rand.Reader, 1024)
+	key, _ := rsa.GenerateKey(rand.Reader, RSA_BITSIZE)
 	pub := key.PublicKey
 	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&pub)
 	if err != nil {
@@ -84,8 +85,6 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	initBlock.Transactions[1] = full1
 
 	/**********************************************************************************/
-
-
 
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
