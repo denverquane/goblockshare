@@ -1,12 +1,8 @@
 package wallet
 
 import (
-	//"crypto/rsa"
-	//"crypto/x509"
-	//"encoding/hex"
-	//"encoding/pem"
 	"fmt"
-	// "github.com/denverquane/GoBlockShare/blockchain"
+	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"strconv"
 )
@@ -51,31 +47,31 @@ func (wallet Wallet) MakeTransaction(quantity float64, currency string, dest tra
 	return transaction.Sign(&wallet.addresses[0].PrivateKey, unsigned)
 }
 
-//func (wallet *Wallet) UpdateBalances(blockchain blockchain.BlockChain) {
-//	//for _, addr := range wallet.addresses {
-//	//	wallet.balance += blockchain.GetAddrBalanceFromInclusiveIndex(wallet.lastProcessedBlock+1, addr.Address, "REP")
-//	//}
-//
-//	newCurrencies := wallet.getNewTokenRecords(blockchain)
-//	for _, v := range newCurrencies {
-//		fmt.Println(v.channelPublic)
-//		signed := v.makeTransactionForMyKey()
-//		fmt.Println("Sending back trans")
-//		//fmt.Println(signed.Payload)
-//		full := transaction.FullTransaction{signed, []string{}, ""}
-//		full.TxID = hex.EncodeToString(full.GetHash())
-//		message, added := blockchain.AddTransaction(full)
-//		if added {
-//			v.status = SentMyPubKey
-//		}
-//		fmt.Println(message)
-//		//bytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, &key, []byte(signed.Payload), []byte("key"))
-//	}
-//	wallet.ChannelRecords = mergeChannelMaps(wallet.ChannelRecords, newCurrencies)
-//
-//	wallet.lastProcessedBlock = int(blockchain.GetNewestBlock().Index)
-//	fmt.Println(wallet.GetBalances())
-//}
+func (wallet *Wallet) UpdateBalances(blockchain blockchain.BlockChain) {
+	for _, addr := range wallet.addresses {
+		wallet.balance += blockchain.GetAddrBalanceFromInclusiveIndex(wallet.lastProcessedBlock+1, addr.Address, "REP")
+	}
+
+	//newCurrencies := wallet.getNewTokenRecords(blockchain)
+	//for _, v := range newCurrencies {
+	//	fmt.Println(v.channelPublic)
+	//	signed := v.makeTransactionForMyKey()
+	//	fmt.Println("Sending back trans")
+	//	//fmt.Println(signed.Payload)
+	//	full := transaction.FullTransaction{signed, []string{}, ""}
+	//	full.TxID = hex.EncodeToString(full.GetHash())
+	//	message, added := blockchain.AddTransaction(full)
+	//	if added {
+	//		v.status = SentMyPubKey
+	//	}
+	//	fmt.Println(message)
+	//	//bytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, &key, []byte(signed.Payload), []byte("key"))
+	//}
+	//wallet.ChannelRecords = mergeChannelMaps(wallet.ChannelRecords, newCurrencies)
+
+	wallet.lastProcessedBlock = int(blockchain.GetNewestBlock().Index)
+	fmt.Println(wallet.GetBalances())
+}
 
 //func (wallet Wallet) getNewTokenRecords(chain blockchain.BlockChain) map[string]ChannelRecord {
 //	currencies := make(map[string]ChannelRecord, 0)
@@ -120,11 +116,11 @@ func (wallet Wallet) MakeTransaction(quantity float64, currency string, dest tra
 //	}
 //	return currencies
 //}
-
-func mergeChannelMaps(map1 map[string]ChannelRecord, map2 map[string]ChannelRecord) map[string]ChannelRecord {
-	map3 := map1
-	for name2, val2 := range map2 {
-		map3[name2] = val2
-	}
-	return map3
-}
+//
+//func mergeChannelMaps(map1 map[string]ChannelRecord, map2 map[string]ChannelRecord) map[string]ChannelRecord {
+//	map3 := map1
+//	for name2, val2 := range map2 {
+//		map3[name2] = val2
+//	}
+//	return map3
+//}

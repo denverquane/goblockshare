@@ -53,8 +53,8 @@ func run() error {
 			break
 		}
 		if scanner.Text() == "refresh" {
-			//Wallet1.UpdateBalances(globalChain)
-			//Wallet2.UpdateBalances(globalChain)
+			Wallet1.UpdateBalances(globalChain)
+			Wallet2.UpdateBalances(globalChain)
 		} else {
 			fmt.Println(scanner.Text())
 		}

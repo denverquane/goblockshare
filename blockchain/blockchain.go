@@ -88,26 +88,29 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	chain.processingBlock = nil
 }
 
-//
-//func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
-//	balance := 0.0
-//
-//	for i, block := range chain.Blocks { //all blocks
-//		if i >= startIndex {
-//			for _, trans := range block.Transactions { //all transactions
-//				if trans.SignedTrans.Currency == currency { //same currency
-//
-//					if trans.SignedTrans.Origin.Address == addr { //same address (transfer out)
-//						balance -= trans.SignedTrans.Quantity
-//					} else if trans.SignedTrans.DestAddr == addr { //same address (transfer in)
-//						balance += trans.SignedTrans.Quantity
-//					}
-//				}
-//			}
-//		}
-//	}
-//	return balance
-//}
+func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
+	balance := 0.0
+
+	for i, block := range chain.Blocks { //all blocks
+		if i >= startIndex {
+			for _, trans := range block.Transactions { //all transactions
+
+				if w, ok := trans.SignedTrans.(transaction.SignedTransaction); ok {
+					//If a signed transaction (not another signable)
+					if w.Currency == currency { //same currency
+						if w.Origin.Address == addr { //same address (transfer out)
+							balance -= w.Quantity
+						} else if w.DestAddr == addr { //same address (transfer in)
+							balance += w.Quantity
+						}
+					}
+				}
+
+			}
+		}
+	}
+	return balance
+}
 
 func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	var min = 0

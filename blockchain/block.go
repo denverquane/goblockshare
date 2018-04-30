@@ -3,12 +3,8 @@
 package blockchain
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
 	"encoding/hex"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
@@ -61,28 +57,30 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 		R: &(big.Int{}), S: &(big.Int{})}
 	full := transaction.FullTransaction{simplePayout, []string{}, ""}
 	full.TxID = hex.EncodeToString(full.GetHash())
-	initBlock.Transactions = make([]transaction.FullTransaction, 2)
+	initBlock.Transactions = make([]transaction.FullTransaction, 1)
 	initBlock.Transactions[0] = full
 
 	/****************************** Testing Tokens ************************************/
 
-	key, _ := rsa.GenerateKey(rand.Reader, RSA_BITSIZE)
-	pub := key.PublicKey
-	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&pub)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	pubKeyPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: pubKeyBytes,
-	})
+	/*
+		key, _ := rsa.GenerateKey(rand.Reader, RSA_BITSIZE)
+		pub := key.PublicKey
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(&pub)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		pubKeyPem := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: pubKeyBytes,
+		})
 
-	fmt.Println("Toke sending to" + string(pubKeyPem))
-	simplePayout1 := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 1, Currency: "TOKE", Payload: string(pubKeyPem),
-		R: &(big.Int{}), S: &(big.Int{})}
-	full1 := transaction.FullTransaction{simplePayout1, []string{}, ""}
-	full1.TxID = hex.EncodeToString(full1.GetHash())
-	initBlock.Transactions[1] = full1
+		fmt.Println("Toke sending to" + string(pubKeyPem))
+		simplePayout1 := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 1, Currency: "TOKE", Payload: string(pubKeyPem),
+			R: &(big.Int{}), S: &(big.Int{})}
+
+		full1 := transaction.MakeFull(simplePayout1, []string{})
+		initBlock.Transactions[1] = full1
+	*/
 
 	/**********************************************************************************/
 
