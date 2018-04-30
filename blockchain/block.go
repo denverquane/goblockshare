@@ -156,7 +156,7 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.PrevHash = oldBlock.Hash
 
 	for _, t := range transactions {
-		if !t.SignedTrans.Verify() {
+		if !transaction.Verify(t.SignedTrans) {
 			log.Println("Invalid transaction!!!")
 			log.Println(t.SignedTrans.ToString())
 			fmt.Println("Retaining old block")

@@ -72,7 +72,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 
 	trans, _ := m.ConvertToFull()
 	fmt.Println(trans.SignedTrans.ToString())
-	if !trans.SignedTrans.Verify() {
+	if !transaction.Verify(trans.SignedTrans) {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
 		return
 	}

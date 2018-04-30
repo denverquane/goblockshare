@@ -63,7 +63,7 @@ func GenerateNewChannelRecord(tokenName string, theiraddress transaction.Base64A
 	return record
 }
 
-func (cr ChannelRecord) makeTransactionForMyKey() transaction.SignedTransaction {
+func (cr ChannelRecord) makeTransactionForMyKey() transaction.SignableTransaction {
 	if cr.status != ReceivedTokenAndChannelPub {
 		fmt.Println("Shouldn't send my key until we have a token and the channel's public key...")
 		return transaction.SignedTransaction{}
@@ -83,6 +83,5 @@ func (cr ChannelRecord) makeTransactionForMyKey() transaction.SignedTransaction 
 
 	origin := transaction.OriginInfo{*cr.myAddress.PublicKey.X, *cr.myAddress.PublicKey.Y, cr.myAddress.Address}
 	signed := transaction.SignedTransaction{origin, cr.channelCreatorAddress, 0.0, "", string(pubKeyPem), nil, nil}
-	signed = signed.SignMessage(&cr.myAddress.PrivateKey)
-	return signed
+	return transaction.Sign(&cr.myAddress.PrivateKey, signed)
 }

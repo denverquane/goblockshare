@@ -48,12 +48,14 @@ func (chain BlockChain) IsValid() bool {
 }
 
 func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) (string, bool) {
-	balance := chain.GetAddrBalanceFromInclusiveIndex(0, trans.SignedTrans.Origin.Address, trans.SignedTrans.Currency)
-	fmt.Println("Checking balance of:" + trans.SignedTrans.Currency)
-	fmt.Println(balance)
-	if balance < trans.SignedTrans.Quantity {
-		return "Insufficient balance! Invalid transaction!", false
-	}
+	//balance := chain.GetAddrBalanceFromInclusiveIndex(0, trans.SignedTrans.Origin.Address, trans.SignedTrans.Currency)
+	//fmt.Println("Checking balance of:" + trans.SignedTrans.Currency)
+	//fmt.Println(balance)
+	//if balance < trans.SignedTrans.Quantity {
+	//	return "Insufficient balance! Invalid transaction!", false
+	//}
+
+	//todo check balances ONLY when the transaction is a signed type (not a channel creation type)
 
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
@@ -86,25 +88,26 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	chain.processingBlock = nil
 }
 
-func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
-	balance := 0.0
-
-	for i, block := range chain.Blocks { //all blocks
-		if i >= startIndex {
-			for _, trans := range block.Transactions { //all transactions
-				if trans.SignedTrans.Currency == currency { //same currency
-
-					if trans.SignedTrans.Origin.Address == addr { //same address (transfer out)
-						balance -= trans.SignedTrans.Quantity
-					} else if trans.SignedTrans.DestAddr == addr { //same address (transfer in)
-						balance += trans.SignedTrans.Quantity
-					}
-				}
-			}
-		}
-	}
-	return balance
-}
+//
+//func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
+//	balance := 0.0
+//
+//	for i, block := range chain.Blocks { //all blocks
+//		if i >= startIndex {
+//			for _, trans := range block.Transactions { //all transactions
+//				if trans.SignedTrans.Currency == currency { //same currency
+//
+//					if trans.SignedTrans.Origin.Address == addr { //same address (transfer out)
+//						balance -= trans.SignedTrans.Quantity
+//					} else if trans.SignedTrans.DestAddr == addr { //same address (transfer in)
+//						balance += trans.SignedTrans.Quantity
+//					}
+//				}
+//			}
+//		}
+//	}
+//	return balance
+//}
 
 func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	var min = 0
