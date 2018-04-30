@@ -48,6 +48,7 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 "pubkeyy":84350736413375414420184852907452573247898047974475373171004335402121461174787
 },
 "txref":[],
+"currency": "REP",
 "quantity":5.99,
 "payload":"Sending!",
 "r":67869825206353784434575061723707880946031772528032340694185580017437536660581,
@@ -71,7 +72,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 
 	trans, _ := m.ConvertToFull()
 	fmt.Println(trans.SignedTrans.ToString())
-	if !trans.SignedTrans.Verify() {
+	if !transaction.Verify(trans.SignedTrans) {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
 		return
 	}

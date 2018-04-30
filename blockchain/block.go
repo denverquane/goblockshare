@@ -16,6 +16,9 @@ import (
 	"time"
 )
 
+//MUST be smaller than the bitsize used for private key generation
+const RSA_BITSIZE = 2048
+
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
 //overall state of the chain, and successive blocks of the chain. For example, a user leaving a comment on a channel
 //should be reflected in a new (immutable) block that other users would not be able to edit or remove; only "tack onto"
@@ -50,13 +53,37 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Payload: "Initial block!",
+	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Currency: "REP", Payload: "Initial block!",
 		R: &(big.Int{}), S: &(big.Int{})}
 	full := transaction.FullTransaction{simplePayout, []string{}, ""}
 	full.TxID = hex.EncodeToString(full.GetHash())
 	initBlock.Transactions = make([]transaction.FullTransaction, 1)
 	initBlock.Transactions[0] = full
-	//initBlock.PrevHash = "GoBlockShare Version: " + version
+
+	/****************************** Testing Tokens ************************************/
+
+	/*
+		key, _ := rsa.GenerateKey(rand.Reader, RSA_BITSIZE)
+		pub := key.PublicKey
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(&pub)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		pubKeyPem := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: pubKeyBytes,
+		})
+
+		fmt.Println("Toke sending to" + string(pubKeyPem))
+		simplePayout1 := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 1, Currency: "TOKE", Payload: string(pubKeyPem),
+			R: &(big.Int{}), S: &(big.Int{})}
+
+		full1 := transaction.MakeFull(simplePayout1, []string{})
+		initBlock.Transactions[1] = full1
+	*/
+
+	/**********************************************************************************/
+
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
 
@@ -87,6 +114,7 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 	c <- true
 }
 
+//TODO check the transaction with the block_rules whenever we add (prevent double-spending, for example)
 func (block *Block) AddTransaction(trans transaction.FullTransaction) {
 	fmt.Println("Adding transaction to mining block")
 	block.mux.Lock()
@@ -126,7 +154,7 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.PrevHash = oldBlock.Hash
 
 	for _, t := range transactions {
-		if !t.SignedTrans.Verify() {
+		if !transaction.Verify(t.SignedTrans) {
 			log.Println("Invalid transaction!!!")
 			log.Println(t.SignedTrans.ToString())
 			fmt.Println("Retaining old block")
