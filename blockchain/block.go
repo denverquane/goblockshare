@@ -19,6 +19,8 @@ import (
 //MUST be smaller than the bitsize used for private key generation
 const RSA_BITSIZE = 2048
 
+const BLOCK_REWARD = 50
+
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
 //overall state of the chain, and successive blocks of the chain. For example, a user leaving a comment on a channel
 //should be reflected in a new (immutable) block that other users would not be able to edit or remove; only "tack onto"
@@ -53,9 +55,7 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	simplePayout := transaction.SignedTransaction{DestAddr: payoutAddr, Quantity: 50, Currency: "REP", Payload: "Initial block!",
-		R: &(big.Int{}), S: &(big.Int{})}
-	full := transaction.FullTransaction{simplePayout, []string{}, ""}
+	full := transaction.FullTransaction{makeBlockRewardTransaction(payoutAddr), []string{}, ""}
 	full.TxID = hex.EncodeToString(full.GetHash())
 	initBlock.Transactions = make([]transaction.FullTransaction, 1)
 	initBlock.Transactions[0] = full
@@ -94,6 +94,11 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	}
 
 	return initBlock
+}
+
+func makeBlockRewardTransaction(addr transaction.Base64Address) transaction.SignedTransaction {
+	return transaction.SignedTransaction{DestAddr: addr, Quantity: BLOCK_REWARD, Payload: "Block Reward",
+		R: &(big.Int{}), S: &(big.Int{})}
 }
 
 //hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
@@ -144,7 +149,7 @@ func isHashValid(hash string, difficulty int) bool {
 //GenerateBlock expects a "base" block to append transactions to, and thus "mining" a new block that contains these
 //transactions. The difficulty in mining this new block is proportional to the number of transactions being added,
 //and the more users that are registered to a channel results in a higher difficulty for mining transactions
-func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransaction) (Block, error) {
+func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransaction, payableAddress transaction.Base64Address) (Block, error) {
 
 	var newBlock Block
 	t := time.Now()
@@ -152,6 +157,9 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Difficulty = oldBlock.Difficulty
 	newBlock.PrevHash = oldBlock.Hash
+	newBlock.Transactions = make([]transaction.FullTransaction, 1)
+	newBlock.Transactions[0] = transaction.FullTransaction{makeBlockRewardTransaction(payableAddress), []string{}, ""}
+	newBlock.Transactions[0].TxID = hex.EncodeToString(newBlock.Transactions[0].GetHash())
 
 	for _, t := range transactions {
 		if !transaction.Verify(t.SignedTrans) {

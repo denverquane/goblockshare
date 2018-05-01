@@ -41,8 +41,8 @@ func (wallet Wallet) getOriginInfo() transaction.OriginInfo {
 	return transaction.AddressToOriginInfo(wallet.addresses[0])
 }
 
-func (wallet Wallet) MakeTransaction(quantity float64, currency string, dest transaction.Base64Address) transaction.SignableTransaction {
-	unsigned := transaction.SignedTransaction{wallet.getOriginInfo(), dest, quantity, currency,
+func (wallet Wallet) MakeTransaction(quantity float64, dest transaction.Base64Address) transaction.SignableTransaction {
+	unsigned := transaction.SignedTransaction{wallet.getOriginInfo(), dest, quantity,
 		"Sending!", nil, nil}
 	return transaction.Sign(&wallet.addresses[0].PrivateKey, unsigned)
 }

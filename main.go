@@ -21,7 +21,7 @@ var Wallet2 wallet.Wallet
 func main() {
 	Wallet1 = wallet.MakeNewWallet()
 	Wallet2 = wallet.MakeNewWallet()
-	Signed = Wallet1.MakeTransaction(5.99, "REP", Wallet2.GetAddress().Address)
+	Signed = Wallet1.MakeTransaction(5.99, Wallet2.GetAddress().Address)
 	fmt.Println(Signed.ToString())
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -38,12 +38,10 @@ func run() error {
 
 	/************ Testing wallet block ***************/
 
-	message, _ := globalChain.AddTransaction(transaction.MakeFull(Signed, []string{})) //empty TXREF for now
+	message, _ := globalChain.AddTransaction(transaction.MakeFull(Signed, []string{}), Wallet1.GetAddress().Address) //empty TXREF for now
 	fmt.Println(message)
 	//Wallet1.UpdateBalances(globalChain)
-	fmt.Println(Wallet1.GetBalances())
 	//Wallet2.UpdateBalances(globalChain)
-	fmt.Println(Wallet2.GetBalances())
 
 	/*************************************************/
 	fmt.Println("Please enter the nodes you would like to communicate with. Type \"done\" when you are finished")

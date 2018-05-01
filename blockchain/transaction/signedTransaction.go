@@ -10,7 +10,6 @@ type SignedTransaction struct {
 	Origin   OriginInfo
 	DestAddr Base64Address
 	Quantity float64
-	Currency string
 	Payload  string
 	R, S     *big.Int
 }
@@ -31,7 +30,6 @@ func (st SignedTransaction) GetHash(haveRSbeenSet bool) []byte {
 	h.Write([]byte(st.DestAddr))
 	// -1 as the precision arg gets the # to 64bit precision intuitively
 	h.Write([]byte(strconv.FormatFloat(st.Quantity, 'f', -1, 64)))
-	h.Write([]byte(st.Currency))
 
 	//Filters the cases where we just want the hash for non-signing purposes
 	//(if the transaction hasn't been signed, we shouldn't hash R and S as they don't matter)
@@ -49,7 +47,7 @@ func (st SignedTransaction) GetOrigin() OriginInfo {
 
 func (st SignedTransaction) ToString() string {
 	return st.Origin.ToString() + "\"txref\":[],\n\"quantity\":" +
-		strconv.FormatFloat(st.Quantity, 'f', -1, 64) + ",\n\"currency\":\"" + st.Currency +
+		strconv.FormatFloat(st.Quantity, 'f', -1, 64) + ",\n\"currency\":\"" +
 		"\",\n\"payload\":\"" + st.Payload + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
 		st.S.String() + ",\n\"destAddr\":\"" +
 		string(st.DestAddr) + "\"\n}\n"

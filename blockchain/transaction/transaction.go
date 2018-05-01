@@ -81,7 +81,6 @@ type RESTWrappedFullTransaction struct {
 	Origin   OriginInfo
 	Txref    []string
 	Quantity float64
-	Currency string
 	Payload  string
 	R        big.Int
 	S        big.Int
@@ -89,7 +88,7 @@ type RESTWrappedFullTransaction struct {
 }
 
 func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) {
-	var signed = SignedTransaction{rest.Origin, Base64Address(rest.DestAddr), rest.Quantity, rest.Currency, rest.Payload, &rest.R, &rest.S}
+	var signed = SignedTransaction{rest.Origin, Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, &rest.R, &rest.S}
 	var full = MakeFull(signed, rest.Txref)
 	return full, nil
 }

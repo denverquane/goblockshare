@@ -47,7 +47,7 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) (string, bool) {
+func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction, payableAddress transaction.Base64Address) (string, bool) {
 	//balance := chain.GetAddrBalanceFromInclusiveIndex(0, trans.SignedTrans.Origin.Address, trans.SignedTrans.Currency)
 	//fmt.Println("Checking balance of:" + trans.SignedTrans.Currency)
 	//fmt.Println(balance)
@@ -62,7 +62,7 @@ func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction) (stri
 		fmt.Println("Added transaction to mining block")
 		return "Added transaction to currently mining block", true
 	} else {
-		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans})
+		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans}, payableAddress)
 		if err != nil {
 			return err.Error(), false
 		}
@@ -97,12 +97,11 @@ func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr tr
 
 				if w, ok := trans.SignedTrans.(transaction.SignedTransaction); ok {
 					//If a signed transaction (not another signable)
-					if w.Currency == currency { //same currency
-						if w.Origin.Address == addr { //same address (transfer out)
-							balance -= w.Quantity
-						} else if w.DestAddr == addr { //same address (transfer in)
-							balance += w.Quantity
-						}
+
+					if w.Origin.Address == addr { //same address (transfer out)
+						balance -= w.Quantity
+					} else if w.DestAddr == addr { //same address (transfer in)
+						balance += w.Quantity
 					}
 				}
 

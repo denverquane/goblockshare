@@ -77,7 +77,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, success := globalBlockchain.AddTransaction(trans)
+	message, success := globalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
 	if !success {
 		respondWithJSON(w, r, http.StatusBadRequest, message)
 	} else {

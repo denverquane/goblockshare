@@ -82,6 +82,6 @@ func (cr ChannelRecord) makeTransactionForMyKey() transaction.SignableTransactio
 	})
 
 	origin := transaction.OriginInfo{*cr.myAddress.PublicKey.X, *cr.myAddress.PublicKey.Y, cr.myAddress.Address}
-	signed := transaction.SignedTransaction{origin, cr.channelCreatorAddress, 0.0, "", string(pubKeyPem), nil, nil}
+	signed := transaction.SignedTransaction{origin, cr.channelCreatorAddress, 0.0, string(pubKeyPem), nil, nil}
 	return transaction.Sign(&cr.myAddress.PrivateKey, signed)
 }
