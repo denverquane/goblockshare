@@ -2,14 +2,9 @@
 [![GoDoc](https://godoc.org/github.com/denverquane/GoBlockShare?status.png)](https://godoc.org/github.com/denverquane/GoBlockShare)
 [![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
 
-This app seeks to demonstrate using blockchain tech. for lightweight transfers of a cryptocurrency, but with secure chat
-functionality built on top.
+This application seeks to demonstrate how decentralized file sharing protocols like Bittorrent can be adapted for use with blockchain technology. This would allow users to distribute files and content in a method similar to Bittorrent, but with the motivations and incentives lended by blockchain systems like Bitcoin and Ethereum. Users that publish valid files will be rewarded -on the blockchain- proportional to the amount of users that agree with the content's validity, and these users that cast their "vote" will be similarly rewarded for sharing their opinion and contributing to the uploader's reputation. Potentially a minimum number of nodes would have to cast their votes regarding a content's validity before any are rewarded for siding with the majority
 
-This is mainly a personal exploration into the blockchain realm, but may also serve as a convenient way to demonstrate how
-cryptocurrency can be a viable payment method when used in conjunction with something like a chat application, for example.
-This would allow users to communicate in realtime, while also being able to "inject" block and transaction information
-during a discussion.
-
+Potentially, some uploaders could restrict their content to nodes that pay them first. This would ensure that 1. Uploaders can restrict access to those with financial incentives to request access, 2. Users that pay to access content are encouraged to vote to recoup some of the cost, 3. Users are encouraged to redistribute the content to similarly recoup losses (need to explore this idea further)
 
 ## Goals:
 - [ ] Proof of Work for posting messages/blocks (prevent spam/abuse)
