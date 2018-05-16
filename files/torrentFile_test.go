@@ -9,7 +9,7 @@ import (
 
 func TestMakeTorrentFile(t *testing.T) {
 	now := time.Now()
-	torr, err := MakeTorrentFileFromFile(kilobyte, "../../../../../../Downloads/CentOS-7-x86_64-Minimal-1708.iso")
+	torr, err := MakeTorrentFileFromFile(kilobyte, "../README.md")
 	after := time.Now()
 	fmt.Println("Took " + strconv.FormatFloat(after.Sub(now).Seconds(), 'f', 2, 64) + " seconds to make torrent")
 

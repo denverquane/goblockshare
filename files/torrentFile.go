@@ -4,19 +4,25 @@ import (
 	"crypto/sha256"
 	"os"
 	"strconv"
+	"encoding/hex"
 )
 
 type TorrentFile struct {
 	SegmentByteSize int
-	SegmentHashes   [][]byte
-	RawData         []byte
+
+	SegmentHashKeys   []string
+	SegmentHashMap	map[string][]byte
 }
 
 var kilobyte = 1000
 var megabyte = 1000000
 
 func (torr TorrentFile) ToString() string {
-	return "torrent size: " + strconv.FormatInt(int64(torr.SegmentByteSize), 10) + " data: " + string(torr.RawData)
+	a := "torrent segment size: " + strconv.FormatInt(int64(torr.SegmentByteSize), 10) + "\n"
+	for _, v := range torr.SegmentHashKeys {
+		a += v + "\n"
+	}
+	return a
 }
 
 func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
@@ -26,7 +32,7 @@ func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
 		return TorrentFile{}, err
 	}
 
-	torr := TorrentFile{segByteSize, make([][]byte, 0), make([]byte, 0)}
+	torr := TorrentFile{segByteSize, make([]string, 0), make(map[string][]byte, 0)}
 	readbytes := segByteSize
 
 	for offset := int64(0); readbytes == segByteSize; {
@@ -67,27 +73,12 @@ func AreSameTorrentBytes(segByteSize int, fileA []byte, fileB []byte) bool {
 }
 
 func (torr TorrentFile) ValidateHashes() bool {
-	segs := arrToSegments(torr.SegmentByteSize, torr.RawData)
-
-	for i, v := range torr.SegmentHashes {
-		hash := hashSegment(segs[i])
-		for ii, vv := range v {
-			if hash[ii] != vv {
-				return false
-			}
+	for hash, raw := range torr.SegmentHashMap {
+		if hex.EncodeToString(hashSegment(raw)) != hash {
+			return false
 		}
 	}
 	return true
-}
-
-func arrToSegments(size int, arr []byte) [][]byte {
-	doubleArr := make([][]byte, 0)
-	var offset int
-	for offset = 0; offset+size < len(arr); offset += size {
-		doubleArr = append(doubleArr, arr[offset : offset + size])
-	}
-	doubleArr = append(doubleArr, arr[offset : ])
-	return doubleArr
 }
 
 func doSegmentsHashToSame(segA []byte, segB []byte) bool {
@@ -107,15 +98,9 @@ func doSegmentsHashToSame(segA []byte, segB []byte) bool {
 }
 
 func (file *TorrentFile) appendNewSegment(segData []byte) {
-	hashed := hashSegment(segData)
-	file.SegmentHashes = append(file.SegmentHashes, hashed)
-	//_, ok := file.segmentHashMap[string(hashed)]
-	//if ok {
-	//	file.segmentHashMap[string(hashed)]++
-	//} else {
-	//	file.segmentHashMap[string(hashed)] = 1
-	//}
-	file.RawData = append(file.RawData, segData...)
+	hexHashed := hex.EncodeToString(hashSegment(segData))
+	file.SegmentHashKeys = append(file.SegmentHashKeys, hexHashed)
+	file.SegmentHashMap[hexHashed] = segData
 }
 
 func hashSegment(seg []byte) []byte {
