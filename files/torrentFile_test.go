@@ -4,20 +4,48 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestMakeTorrentFile(t *testing.T) {
-	err, torr := MakeTorrentFileFromFile(kilobyte, "../../../../../../Downloads/CentOS-7-x86_64-Minimal-1708.iso")
+	now := time.Now()
+	torr, err := MakeTorrentFileFromFile(kilobyte, "../../../../../../Downloads/CentOS-7-x86_64-Minimal-1708.iso")
+	after := time.Now()
+	fmt.Println("Took " + strconv.FormatFloat(after.Sub(now).Seconds(), 'f', 2, 64) + " seconds to make torrent")
+
 	if err != nil {
 		fmt.Print(err)
 		return
 	}
-	var total int64 = 0
-	for i, v := range torr.segmentHashMap {
-		if v > 1 {
-			fmt.Println("Duplicate " + i + "occurs " + strconv.FormatInt(v, 10) + "times")
-			total += v
-		}
+
+	fmt.Println(torr.ValidateHashes())
+	//var total int64 = 0
+	//for _, v := range torr.segmentHashMap {
+	//	if v > 1 {
+	//		//fmt.Println("Duplicate " + i + "occurs " + strconv.FormatInt(v, 10) + "times")
+	//		total += v
+	//	}
+	//}
+	//var ratio = float64(total) / float64(len(torr.segmentHashes))
+	//fmt.Println("Can reduce size by " + strconv.FormatFloat(ratio * 100.0, 'f', 5, 64) + "%")
+}
+
+func TestAreSameTorrentBytes(t *testing.T) {
+	sampleA := []byte("asdfasdf")
+	sampleB := []byte("asdfasdf")
+
+	if !AreSameTorrentBytes(2, sampleA, sampleB) {
+		t.Fail()
 	}
-	fmt.Println(strconv.FormatInt(total, 10) + " kilobyte reduction ")
+	sampleC := []byte("asdfasd")
+
+	if AreSameTorrentBytes(2, sampleA, sampleC) {
+		t.Fail()
+	}
+
+	sampleD := []byte("asdfasdg")
+
+	if AreSameTorrentBytes(10, sampleA, sampleD) {
+		t.Fail()
+	}
 }

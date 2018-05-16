@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"github.com/denverquane/GoBlockShare/files"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -18,6 +19,7 @@ func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
 
 	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
+	muxRouter.HandleFunc("/addTorrent", handleReceiveTorrent).Methods("POST")
 
 	return muxRouter
 }
@@ -36,6 +38,20 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	io.WriteString(w, string(data))
+}
+
+func handleReceiveTorrent(w http.ResponseWriter, r *http.Request) {
+	var message files.TorrentFile
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&message); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+	defer r.Body.Close()
+
+	respondWithJSON(w, r, http.StatusCreated, message)
+	fmt.Println(message.ValidateHashes())
 }
 
 /* Below is an example of the input format for writing a transaction via the REST API:

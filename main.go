@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"github.com/denverquane/GoBlockShare/files"
 )
 
 var Signed transaction.SignableTransaction
@@ -54,7 +55,7 @@ func run() error {
 			Wallet1.UpdateBalances(globalChain)
 			Wallet2.UpdateBalances(globalChain)
 		} else {
-			fmt.Println(scanner.Text())
+			httpAddr = scanner.Text()
 		}
 	}
 
@@ -64,7 +65,7 @@ func run() error {
 
 	muxx := network.MakeMuxRouter(&globalChain)
 
-	log.Println("Listening on ", os.Getenv("PORT"))
+	log.Println("Listening on ", httpAddr)
 	if httpAddr == "8080" {
 		log.Println("(This is the same port used internally for running Docker builds - are you running within a container?)")
 	}
@@ -76,6 +77,17 @@ func run() error {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+
+	if httpAddr == "8040" {
+		torr, err := files.MakeTorrentFileFromFile(10, "README.md")
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(torr.ToString())
+		network.BroadcastTorrent("http://localhost:8050/addTorrent", torr)
+	}
+
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
