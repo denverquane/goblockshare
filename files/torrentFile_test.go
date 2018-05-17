@@ -18,34 +18,37 @@ func TestMakeTorrentFile(t *testing.T) {
 		return
 	}
 
-	fmt.Println(torr.ValidateHashes())
-	//var total int64 = 0
-	//for _, v := range torr.segmentHashMap {
-	//	if v > 1 {
-	//		//fmt.Println("Duplicate " + i + "occurs " + strconv.FormatInt(v, 10) + "times")
-	//		total += v
-	//	}
-	//}
-	//var ratio = float64(total) / float64(len(torr.segmentHashes))
-	//fmt.Println("Can reduce size by " + strconv.FormatFloat(ratio * 100.0, 'f', 5, 64) + "%")
+	for segmentSize := 2;  segmentSize < 10; segmentSize++ {
+		torr, _ := MakeTorrentFileFromFile(segmentSize, "../README.md")
+		val := torr.GetDuplicatesTotal() * (segmentSize * segmentSize * segmentSize)
+		fmt.Println("Size " + string(segmentSize + int('0')) + " val: " + strconv.FormatInt(int64(val), 10))
+	}
+
+	fmt.Println(torr.Validate())
 }
 
 func TestAreSameTorrentBytes(t *testing.T) {
-	sampleA := []byte("asdfasdf")
-	sampleB := []byte("asdfasdf")
+	sampleA, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"))
+	sampleB, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"))
 
-	if !AreSameTorrentBytes(2, sampleA, sampleB) {
+	if !sampleA.Equals(sampleB){
+		fmt.Println("Not equals!")
+		fmt.Println(sampleA)
+		fmt.Println(sampleB)
 		t.Fail()
 	}
-	sampleC := []byte("asdfasd")
+	fmt.Println(sampleA.GetDuplicatesTotal())
+	sampleC, _ := MakeTorrentFromBytes(2, []byte("asdfasf"))
 
-	if AreSameTorrentBytes(2, sampleA, sampleC) {
+	if sampleA.Equals(sampleC){
+		fmt.Println("Equals shorter!")
 		t.Fail()
 	}
 
-	sampleD := []byte("asdfasdg")
+	sampleD, _ := MakeTorrentFromBytes(3, []byte("asdfasdf"))
 
-	if AreSameTorrentBytes(10, sampleA, sampleD) {
+	if sampleA.Equals(sampleD){
+		fmt.Println("Equals diff seg length!")
 		t.Fail()
 	}
 }
