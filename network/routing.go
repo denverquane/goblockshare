@@ -51,7 +51,7 @@ func handleReceiveTorrent(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	respondWithJSON(w, r, http.StatusCreated, message)
-	fmt.Println(message.ValidateHashes())
+	fmt.Println(message.Validate())
 }
 
 /* Below is an example of the input format for writing a transaction via the REST API:

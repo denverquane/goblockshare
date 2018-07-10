@@ -1,6 +1,7 @@
 # GoBlockShare
 [![GoDoc](https://godoc.org/github.com/denverquane/GoBlockShare?status.png)](https://godoc.org/github.com/denverquane/GoBlockShare)
 [![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
+[![Go Report Card](https://goreportcard.com/badge/github.com/denverquane/GoBlockShare)](https://goreportcard.com/report/github.com/denverquane/GoBlockShare)
 
 This application seeks to demonstrate how decentralized file sharing protocols like Bittorrent can be adapted for use with blockchain technology. This would allow users to distribute files and content in a method similar to Bittorrent, but with the motivations and incentives lended by blockchain systems like Bitcoin and Ethereum. Users that publish valid files will be rewarded -on the blockchain- proportional to the amount of users that agree with the content's validity, and these users that cast their "vote" will be similarly rewarded for sharing their opinion and contributing to the uploader's reputation. Potentially a minimum number of nodes would have to cast their votes regarding a content's validity before any are rewarded for siding with the majority
 
