@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
+	"github.com/denverquane/GoBlockShare/files"
 	"io/ioutil"
 	"net/http"
-	"github.com/denverquane/GoBlockShare/files"
 )
 
 // Make sure marshalindent always operates on a struct with Public fields!!!!!

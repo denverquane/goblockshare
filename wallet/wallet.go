@@ -29,7 +29,7 @@ func (wallet Wallet) GetAddress() transaction.PersonalAddress {
 
 func (wallet Wallet) GetBalances() string {
 	str := "Wallet Balance: " + strconv.FormatFloat(wallet.balance, 'f', -1, 64) + " REP"
-	for name, _ := range wallet.ChannelRecords {
+	for name := range wallet.ChannelRecords {
 		str += "\n                " + "1 " + name
 	}
 

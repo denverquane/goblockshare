@@ -8,8 +8,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	//"crypto/x509"
-	//"encoding/pem"
 )
 
 type Base64Address string

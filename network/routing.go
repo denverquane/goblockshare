@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
+	"github.com/denverquane/GoBlockShare/files"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
-	"github.com/denverquane/GoBlockShare/files"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -24,7 +24,7 @@ func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
 	return muxRouter
 }
 
-func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
+func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 	// vars := mux.Vars(r)
 
 	data, err := json.MarshalIndent(*globalBlockchain, "", " ")

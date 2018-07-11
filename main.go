@@ -3,13 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/denverquane/GoBlockShare/files"
 	"github.com/denverquane/GoBlockShare/network"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 	"time"
-	"github.com/denverquane/GoBlockShare/files"
 )
 
 //var Signed transaction.SignableTransaction
@@ -42,19 +42,18 @@ func run() error {
 	//fmt.Println(message)
 	//Wallet1.UpdateBalances(globalChain)
 	//Wallet2.UpdateBalances(globalChain)
-
 	/*************************************************/
 	torr, err := files.MakeTorrentFileFromFile(1000, "README.md")
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println("Total checksum: " + torr.TotalHash)
 
 	//TODO don't store the actual data? Just store a reference to the file's location, and the offset bytes
 	for i, v := range torr.SegmentHashMap {
 		fmt.Println("I know of layer " + i)
 		globalMap[i] = v
 	}
-
 
 	//fmt.Println("Please enter the nodes you would like to communicate with. Type \"done\" when you are finished")
 	scanner := bufio.NewScanner(os.Stdin)

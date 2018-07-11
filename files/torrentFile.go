@@ -2,17 +2,18 @@ package files
 
 import (
 	"crypto/sha256"
-	"os"
-	"strconv"
 	"encoding/hex"
 	"errors"
+	"os"
+	"strconv"
 )
 
 type TorrentFile struct {
 	SegmentByteSize int
-	SegmentHashKeys   []string
-	SegmentHashMap	map[string][]byte
-	DuplicatesMap	map[string]int
+	SegmentHashKeys []string
+	SegmentHashMap  map[string][]byte
+	DuplicatesMap   map[string]int
+	TotalHash       string
 }
 
 var kilobyte = 1000
@@ -44,8 +45,10 @@ func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
 		return TorrentFile{}, err
 	}
 
-	torr := TorrentFile{segByteSize, make([]string, 0), make(map[string][]byte, 0), make(map[string]int)}
+	torr := TorrentFile{segByteSize, make([]string, 0),
+		make(map[string][]byte, 0), make(map[string]int), ""}
 	readbytes := segByteSize
+	total := sha256.New()
 
 	for offset := int64(0); readbytes == segByteSize; {
 		buffer := make([]byte, segByteSize)
@@ -54,27 +57,33 @@ func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
 			return TorrentFile{}, err
 		}
 		torr.appendNewSegment(buffer[0:readbytes])
+		total.Write(buffer[0:readbytes])
 		offset += int64(readbytes)
 		//fmt.Println("Read " + strconv.FormatInt(off / 1000, 10) + " kilobytes so far")
 	}
+	torr.TotalHash = hex.EncodeToString(total.Sum(nil))
 	return torr, nil
 }
 
 func MakeTorrentFromBytes(segByteSize int, data []byte) (TorrentFile, error) {
-	if segByteSize > len(data){
+	if segByteSize > len(data) {
 		return TorrentFile{}, errors.New("Segment too long")
 	}
 
-	torr := TorrentFile{segByteSize, make([]string, 0), make(map[string][]byte, 0), make(map[string]int)}
+	torr := TorrentFile{segByteSize, make([]string, 0), make(map[string][]byte, 0), make(map[string]int), ""}
 
 	var offset int
-	for offset = 0; offset + segByteSize < len(data); {
-		segment := data[offset:offset+segByteSize]
+	total := sha256.New()
+	for offset = 0; offset+segByteSize < len(data); {
+		segment := data[offset : offset+segByteSize]
 
 		offset += segByteSize
 		torr.appendNewSegment(segment)
+		total.Write(segment)
 	}
 	torr.appendNewSegment(data[offset:])
+	total.Write(data[offset:])
+	torr.TotalHash = hex.EncodeToString(total.Sum(nil))
 	return torr, nil
 }
 
@@ -107,17 +116,22 @@ func (file TorrentFile) GetDuplicatesTotal() int {
 	return total
 }
 
+//appendNewSegment adds new raw data to the torrentfile by hashing it and storing it in a map. If the same hash has
+//been computed previously, then the counter is incremented for that particular entry (to allow for analyzing if there
+//are common layers of file, and thus save on storage/bandwidth)
 func (file *TorrentFile) appendNewSegment(segData []byte) {
-	hexHashed := hex.EncodeToString(hashSegment(segData))
-	file.SegmentHashKeys = append(file.SegmentHashKeys, hexHashed)
+	hexHashed := hex.EncodeToString(hashSegment(segData))          //hash the data
+	file.SegmentHashKeys = append(file.SegmentHashKeys, hexHashed) //record the hash in order
+
 	if _, ok := file.SegmentHashMap[hexHashed]; ok { //we've generated this hash before
 		if _, okk := file.DuplicatesMap[hexHashed]; okk { //we've made the entry before
 			file.DuplicatesMap[hexHashed]++
 		} else {
 			file.DuplicatesMap[hexHashed] = 1 //this is the 2nd occurrence (counter starts at 1 for "1st duplicate")
 		}
+	} else {
+		file.SegmentHashMap[hexHashed] = segData
 	}
-	file.SegmentHashMap[hexHashed] = segData
 }
 
 func hashSegment(seg []byte) []byte {
