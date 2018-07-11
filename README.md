@@ -3,11 +3,11 @@
 [![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
 [![Go Report Card](https://goreportcard.com/badge/github.com/denverquane/GoBlockShare)](https://goreportcard.com/report/github.com/denverquane/GoBlockShare)
 
-####DISCLAIMER
+#### DISCLAIMER
 This project is under constant development, and likely will not be fully (or even partially) functioning until this 
 disclaimer has been removed. Clone at your own peril!
 
-##Summary
+## Summary
 
 This application seeks to demonstrate how decentralized file sharing protocols like BitTorrent can be adapted for use with
 blockchain technology. This would allow users to distribute files and content in a method similar to the Bittorrent protocol,
@@ -23,8 +23,7 @@ reputation, feedback, etc. for files they have downloaded or published.
 This project aims to solve a crucial problem with the BitTorrent protocol, namely the lack of incentivization for "seeders", or those
 that actively help distribute content to other users, as opposed to "leechers", who solely download and do not redistribute content.
 While there are many BitTorrent communities that restrict access to users with a certain ratio of uploads/downloads to 
-navigate this issue, these communities are often hard to find, restrictive to newcomers, subject to "single-party" authoritation, and (rarely)
-offer any incentivization for content providers.
+navigate this issue, these communities are often hard to find, restrictive to newcomers, subject to "single-party" authoritation, and (rarely) offer any incentivization for content providers.
 
 Blockchain technology offers the ability to search a decentralized and public database to easily determine which users have uploaded
 valid and quality content, users that contribute feedback or redistribute content, and which users are incentivizing content
@@ -37,7 +36,7 @@ users, or verifying content and submitting feedback on download), while providin
 who desire more granularity and control.  
  
 
-##Installation
+## Installation
 A valid Go installation is required to be able to install and run this project: https://golang.org/doc/install
 
 Assuming your Go installation is configured correctly, you can then clone this project using 
