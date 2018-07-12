@@ -10,6 +10,8 @@ type BlockChain struct {
 	processingBlock *Block
 }
 
+//IsProcessing checks the field for the block being processed, and if it is nil, indicates that the blocks for the
+//chain have already been processed, and there isn't a lingering block being mined/hashed
 func (chain BlockChain) IsProcessing() bool {
 	return chain.processingBlock != nil
 }
@@ -27,6 +29,9 @@ func (chain BlockChain) ToString() string {
 	return str
 }
 
+//IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
+//and that the hashes linking blocks are valid linkages (make sure previous hash actually matches the previous block's
+//hash, for example)
 func (chain BlockChain) IsValid() bool {
 	if chain.Len() != len(chain.Blocks) {
 		return false
@@ -75,6 +80,8 @@ func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction, payab
 	}
 }
 
+//waitForProcessingSwap waits until a block has finished mining (asynchronously) before adding it to the sequence of
+//recorded/valid blocks
 func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	for i := 0; !(<-c); i++ {
 		if i%100000 == 0 {
@@ -113,6 +120,8 @@ func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr tr
 	return balance
 }
 
+//AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
+//possible replacing chain of longer length than the other
 func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	var min = 0
 	if chain1.Len() > chain2.Len() {
@@ -135,6 +144,8 @@ func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
 }
 
+//MakeInitialChain constructs a simple new blockchain, with an initial block paying out to the provided address
+//This is a basic test to stimulate the network with an initial balance/transaction
 func MakeInitialChain(payoutAddr transaction.Base64Address) BlockChain {
 	chain := BlockChain{Blocks: make([]Block, 1)}
 	chain.Blocks[0] = InitialBlock(payoutAddr)
