@@ -32,7 +32,7 @@ func main() {
 func run() error {
 	httpAddr := os.Getenv("PORT")
 
-	globalMap := make(map[string][]byte, 0)
+	globalHashes := make([]string, 0)
 
 	//globalChain := blockchain.MakeInitialChain(Wallet1.GetAddress().Address)
 
@@ -43,29 +43,24 @@ func run() error {
 	//Wallet1.UpdateBalances(globalChain)
 	//Wallet2.UpdateBalances(globalChain)
 	/*************************************************/
-	torr, err := files.MakeTorrentFileFromFile(1000, "README.md")
+	torr, err := files.MakeTorrentFileFromFile(1000, "README.md", "readme.md")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("Total checksum: " + torr.TotalHash)
 
 	//TODO don't store the actual data? Just store a reference to the file's location, and the offset bytes
-	for i, v := range torr.SegmentHashMap {
-		fmt.Println("I know of layer " + i)
-		globalMap[i] = v
+	for _, v := range torr.SegmentHashKeys {
+		fmt.Println("I know of layer " + v)
+		globalHashes = append(globalHashes, v)
 	}
 
-	//fmt.Println("Please enter the nodes you would like to communicate with. Type \"done\" when you are finished")
+	fmt.Println("Please enter the port to be used for communicating with this node. Type \"done\" when you are finished")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		if scanner.Text() == "done" || scanner.Text() == "quit" {
-			break
-		}
-		if scanner.Text() == "refresh" {
-			//Wallet1.UpdateBalances(globalChain)
-			//Wallet2.UpdateBalances(globalChain)
-		} else {
+		if scanner.Text() != "" {
 			httpAddr = scanner.Text()
+			break
 		}
 	}
 
@@ -74,7 +69,9 @@ func run() error {
 	}
 
 	//TODO Remove nil address reference
-	muxx := network.MakeMuxRouter(nil)
+	muxx := network.MakeMuxRouter()
+	network.Torrents = make([]files.TorrentFile, 0)
+	network.Torrents = append(network.Torrents, torr)
 
 	log.Println("Listening on ", httpAddr)
 	if httpAddr == "8080" {

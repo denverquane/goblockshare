@@ -11,13 +11,14 @@ import (
 	"net/http"
 )
 
-var globalBlockchain *blockchain.BlockChain
+var GlobalBlockchain *blockchain.BlockChain
+var Torrents []files.TorrentFile
 
-func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
+func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
-	globalBlockchain = chain
 
-	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/", handleGetTorrents).Methods("GET")
+	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/addTorrent", handleReceiveTorrent).Methods("POST")
 
@@ -26,14 +27,38 @@ func MakeMuxRouter(chain *blockchain.BlockChain) http.Handler {
 
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 	// vars := mux.Vars(r)
+	if GlobalBlockchain == nil {
+		fmt.Println("Don't have blockchain; making new one")
+		temp := blockchain.MakeInitialChain("")
+		GlobalBlockchain = &temp
+	}
 
-	data, err := json.MarshalIndent(*globalBlockchain, "", " ")
+	data, err := json.MarshalIndent(*GlobalBlockchain, "", " ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	fmt.Println("GET chain")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	io.WriteString(w, string(data))
+}
+
+func handleGetTorrents(w http.ResponseWriter, _ *http.Request) {
+	if Torrents == nil {
+		fmt.Println("Don't have torrents; making new array")
+		Torrents = make([]files.TorrentFile, 0)
+	}
+
+	data, err := json.MarshalIndent(Torrents, "", " ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("GET torrents")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
@@ -93,7 +118,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, success := globalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
+	message, success := GlobalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
 	if !success {
 		respondWithJSON(w, r, http.StatusBadRequest, message)
 	} else {

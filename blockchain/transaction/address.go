@@ -38,6 +38,7 @@ func GenerateNewPersonalAddress() PersonalAddress {
 	}
 	address := HashPublicToB64Address(priv.PublicKey)
 
+	//get rid of "O" and "l" letters to avoid ambiguity with numbers
 	if strings.Contains(string(address), "O") || strings.Contains(string(address), "l") {
 		fmt.Println("invalid char, regenerating")
 		return GenerateNewPersonalAddress()

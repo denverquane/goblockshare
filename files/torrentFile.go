@@ -9,11 +9,17 @@ import (
 )
 
 type TorrentFile struct {
+	Name 			string
 	SegmentByteSize int
-	SegmentHashKeys []string
-	SegmentHashMap  map[string][]byte
-	DuplicatesMap   map[string]int
 	TotalHash       string
+	//Total hash is dependent on the name, the segment size, the raw data, and nothing else
+	//-the other aspects of a torrent, such as the hashed duplicates and ordering of segments should be LOCAL
+	//(we already hash the raw data in order)
+
+	SegmentHashKeys []string //fine to expose publicly to say what layers the torrent has
+
+	segmentHashMaps map[string][]byte //don't expose; reveals entire torrent structure
+	duplicatesMaps  map[string]int //don't reveal; should only be used internally/locally
 }
 
 var kilobyte = 1000
@@ -32,24 +38,25 @@ func (torr TorrentFile) ToHash() []byte {
 
 	for _, v := range torr.SegmentHashKeys {
 		h.Write([]byte(v))
-		h.Write(torr.SegmentHashMap[v]) //get the raw bytes associated with the hash
+		h.Write(torr.segmentHashMaps[v]) //get the raw bytes associated with the hash
 	}
 
 	return h.Sum(nil)
 }
 
-func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
+func MakeTorrentFileFromFile(segByteSize int, url string, name string) (TorrentFile, error) {
 	file, err := os.Open(url)
 	defer file.Close()
 	if err != nil {
 		return TorrentFile{}, err
 	}
 
-	torr := TorrentFile{segByteSize, make([]string, 0),
-		make(map[string][]byte, 0), make(map[string]int), ""}
+	torr := TorrentFile{name, segByteSize, "", make([]string, 0),
+		make(map[string][]byte, 0), make(map[string]int)}
 	readbytes := segByteSize
 	total := sha256.New()
-
+	total.Write([]byte(name))
+	//TODO write segbytesize (dont allow torrents to change segmentation size)
 	for offset := int64(0); readbytes == segByteSize; {
 		buffer := make([]byte, segByteSize)
 		readbytes, _ = file.ReadAt(buffer, offset)
@@ -65,15 +72,17 @@ func MakeTorrentFileFromFile(segByteSize int, url string) (TorrentFile, error) {
 	return torr, nil
 }
 
-func MakeTorrentFromBytes(segByteSize int, data []byte) (TorrentFile, error) {
+func MakeTorrentFromBytes(segByteSize int, data []byte, name string) (TorrentFile, error) {
 	if segByteSize > len(data) {
 		return TorrentFile{}, errors.New("Segment too long")
 	}
 
-	torr := TorrentFile{segByteSize, make([]string, 0), make(map[string][]byte, 0), make(map[string]int), ""}
+	torr := TorrentFile{name, segByteSize, "", make([]string, 0), make(map[string][]byte, 0), make(map[string]int),}
 
 	var offset int
 	total := sha256.New()
+	total.Write([]byte(name))
+	//TODO write segbytesize (dont allow torrents to change segmentation size)
 	for offset = 0; offset+segByteSize < len(data); {
 		segment := data[offset : offset+segByteSize]
 
@@ -100,7 +109,7 @@ func (torr1 TorrentFile) Equals(torr2 TorrentFile) bool {
 }
 
 func (torr TorrentFile) Validate() bool {
-	for hash, raw := range torr.SegmentHashMap {
+	for hash, raw := range torr.segmentHashMaps {
 		if hex.EncodeToString(hashSegment(raw)) != hash {
 			return false
 		}
@@ -110,7 +119,7 @@ func (torr TorrentFile) Validate() bool {
 
 func (file TorrentFile) GetDuplicatesTotal() int {
 	total := 0
-	for _, v := range file.DuplicatesMap {
+	for _, v := range file.duplicatesMaps {
 		total += v
 	}
 	return total
@@ -123,14 +132,14 @@ func (file *TorrentFile) appendNewSegment(segData []byte) {
 	hexHashed := hex.EncodeToString(hashSegment(segData))          //hash the data
 	file.SegmentHashKeys = append(file.SegmentHashKeys, hexHashed) //record the hash in order
 
-	if _, ok := file.SegmentHashMap[hexHashed]; ok { //we've generated this hash before
-		if _, okk := file.DuplicatesMap[hexHashed]; okk { //we've made the entry before
-			file.DuplicatesMap[hexHashed]++
+	if _, ok := file.segmentHashMaps[hexHashed]; ok { //we've generated this hash before
+		if _, okk := file.duplicatesMaps[hexHashed]; okk { //we've made the entry before
+			file.duplicatesMaps[hexHashed]++
 		} else {
-			file.DuplicatesMap[hexHashed] = 1 //this is the 2nd occurrence (counter starts at 1 for "1st duplicate")
+			file.duplicatesMaps[hexHashed] = 1 //this is the 2nd occurrence (counter starts at 1 for "1st duplicate")
 		}
 	} else {
-		file.SegmentHashMap[hexHashed] = segData
+		file.segmentHashMaps[hexHashed] = segData
 	}
 }
 

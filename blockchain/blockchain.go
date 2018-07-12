@@ -88,6 +88,8 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	chain.processingBlock = nil
 }
 
+//TODO refactor to support "reputation"
+//This will need refactoring to support a wide variety of inquiries
 func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
 	balance := 0.0
 
