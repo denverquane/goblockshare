@@ -6,7 +6,7 @@ import (
 )
 
 func TestMakeInitialChain(t *testing.T) {
-	chain := MakeInitialChain("")
+	chain := MakeInitialChain()
 
 	//fmt.Println(chain.ToString())
 

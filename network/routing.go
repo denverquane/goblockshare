@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
-	"github.com/denverquane/GoBlockShare/blockchain/transaction"
+	//"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"github.com/denverquane/GoBlockShare/files"
 	"github.com/gorilla/mux"
 	"io"
@@ -19,7 +19,7 @@ func MakeMuxRouter() http.Handler {
 
 	muxRouter.HandleFunc("/", handleGetTorrents).Methods("GET")
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
+	//muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/addTorrent", handleReceiveTorrent).Methods("POST")
 
 	return muxRouter
@@ -29,7 +29,7 @@ func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 	// vars := mux.Vars(r)
 	if GlobalBlockchain == nil {
 		fmt.Println("Don't have blockchain; making new one")
-		temp := blockchain.MakeInitialChain("")
+		temp := blockchain.MakeInitialChain()
 		GlobalBlockchain = &temp
 	}
 
@@ -99,33 +99,33 @@ func handleReceiveTorrent(w http.ResponseWriter, r *http.Request) {
 
 */
 
-func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
-	// vars := mux.Vars(r)
-
-	var m transaction.RESTWrappedFullTransaction
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&m); err != nil {
-		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
-		return
-	}
-	defer r.Body.Close()
-
-	trans, _ := m.ConvertToFull()
-	fmt.Println(trans.SignedTrans.ToString())
-	if !transaction.Verify(trans.SignedTrans) {
-		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
-		return
-	}
-
-	message, success := GlobalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
-	if !success {
-		respondWithJSON(w, r, http.StatusBadRequest, message)
-	} else {
-		respondWithJSON(w, r, http.StatusCreated, message)
-	}
-	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)
-}
+//func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
+//	// vars := mux.Vars(r)
+//
+//	var m transaction.RESTWrappedFullTransaction
+//
+//	decoder := json.NewDecoder(r.Body)
+//	if err := decoder.Decode(&m); err != nil {
+//		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+//		return
+//	}
+//	defer r.Body.Close()
+//
+//	trans, _ := m.ConvertToFull()
+//	fmt.Println(trans.SignedTrans.ToString())
+//	if !transaction.Verify(trans.SignedTrans) {
+//		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
+//		return
+//	}
+//
+//	message, success := GlobalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
+//	if !success {
+//		respondWithJSON(w, r, http.StatusBadRequest, message)
+//	} else {
+//		respondWithJSON(w, r, http.StatusCreated, message)
+//	}
+//	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)
+//}
 
 func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload interface{}) {
 	response, err := json.MarshalIndent(payload, "", "  ")

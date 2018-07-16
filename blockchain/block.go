@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"log"
-	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,15 +49,12 @@ func (block Block) ToString() string {
 
 //InitialBlock creates a Block that has index 0, present timestamp, empty transaction slice,
 //and an accurate/valid hash (albeit no previous hash for obvious reasons)
-func InitialBlock(payoutAddr transaction.Base64Address) Block {
+func InitialBlock() Block {
 	var initBlock Block
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	full := transaction.FullTransaction{makeBlockRewardTransaction(payoutAddr), []string{}, ""}
-	full.TxID = hex.EncodeToString(full.GetHash())
-	initBlock.Transactions = make([]transaction.FullTransaction, 1)
-	initBlock.Transactions[0] = full
+	initBlock.Transactions = make([]transaction.FullTransaction, 0)
 
 	/****************************** Testing Tokens ************************************/
 
@@ -94,11 +90,6 @@ func InitialBlock(payoutAddr transaction.Base64Address) Block {
 	}
 
 	return initBlock
-}
-
-func makeBlockRewardTransaction(addr transaction.Base64Address) transaction.SignedTransaction {
-	return transaction.SignedTransaction{DestAddr: addr, Quantity: BLOCK_REWARD, Payload: "Block Reward",
-		R: &(big.Int{}), S: &(big.Int{})}
 }
 
 //hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
@@ -157,9 +148,9 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.FullTransac
 	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Difficulty = oldBlock.Difficulty
 	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Transactions = make([]transaction.FullTransaction, 1)
-	newBlock.Transactions[0] = transaction.FullTransaction{makeBlockRewardTransaction(payableAddress), []string{}, ""}
-	newBlock.Transactions[0].TxID = hex.EncodeToString(newBlock.Transactions[0].GetHash())
+	newBlock.Transactions = make([]transaction.FullTransaction, 0)
+	//newBlock.Transactions[0] = transaction.FullTransaction{makeBlockRewardTransaction(payableAddress), []string{}, ""}
+	//newBlock.Transactions[0].TxID = hex.EncodeToString(newBlock.Transactions[0].GetHash())
 
 	for _, t := range transactions {
 		if !transaction.Verify(t.SignedTrans) {

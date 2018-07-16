@@ -10,7 +10,14 @@ import (
 	"math/big"
 )
 
+type Transaction interface {
+	GetType() string
+	GetHash() []byte
+	ToString() string
+}
+
 type SignableTransaction interface {
+	GetType() string
 	GetHash(bool) []byte
 	SetRS(*big.Int, *big.Int) SignableTransaction
 	GetRS() (*big.Int, *big.Int)
@@ -31,7 +38,7 @@ func Sign(priv *ecdsa.PrivateKey, st SignableTransaction) SignableTransaction {
 
 func Verify(st SignableTransaction) bool {
 	origin := st.GetOrigin()
-	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, &origin.PubKeyX, &origin.PubKeyY}
+	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, origin.PubKeyX, origin.PubKeyY}
 
 	if !VerifyWithKey(st, key) { //signed transaction isn't verified with the public key
 		fmt.Println("Signed doesnt verify")
@@ -55,8 +62,8 @@ func MakeFull(st SignableTransaction, txref []string) FullTransaction {
 }
 
 type OriginInfo struct {
-	PubKeyX big.Int
-	PubKeyY big.Int
+	PubKeyX *big.Int
+	PubKeyY *big.Int
 	Address Base64Address
 }
 
@@ -74,24 +81,24 @@ func (oi OriginInfo) ToString() string {
 }
 
 func AddressToOriginInfo(address PersonalAddress) OriginInfo {
-	return OriginInfo{*address.PublicKey.X, *address.PublicKey.Y, address.Address}
+	return OriginInfo{address.PublicKey.X, address.PublicKey.Y, address.Address}
 }
-
-type RESTWrappedFullTransaction struct {
-	Origin   OriginInfo
-	Txref    []string
-	Quantity float64
-	Payload  string
-	R        big.Int
-	S        big.Int
-	DestAddr string
-}
-
-func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) {
-	var signed = SignedTransaction{rest.Origin, Base64Address(rest.DestAddr), rest.Quantity, rest.Payload, &rest.R, &rest.S}
-	var full = MakeFull(signed, rest.Txref)
-	return full, nil
-}
+//
+//type RESTWrappedFullTransaction struct {
+//	Origin   OriginInfo
+//	Txref    []string
+//	Quantity float64
+//	Payload  string
+//	R        big.Int
+//	S        big.Int
+//	DestAddr string
+//}
+//
+//func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) {
+//	var signed = TorrentTransaction{rest.Origin, &rest.R, &rest.S}
+//	var full = MakeFull(signed, rest.Txref)
+//	return full, nil
+//}
 
 type FullTransaction struct {
 	SignedTrans SignableTransaction

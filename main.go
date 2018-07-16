@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"github.com/denverquane/GoBlockShare/blockchain"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 )
 
 //var Signed transaction.SignableTransaction
@@ -34,7 +36,9 @@ func run() error {
 
 	globalHashes := make([]string, 0)
 
-	//globalChain := blockchain.MakeInitialChain(Wallet1.GetAddress().Address)
+	globalChain := blockchain.MakeInitialChain()
+
+	myAddress := transaction.GenerateNewPersonalAddress()
 
 	/************ Testing wallet block ***************/
 
@@ -50,10 +54,17 @@ func run() error {
 	fmt.Println("Total checksum: " + torr.TotalHash)
 
 	//TODO don't store the actual data? Just store a reference to the file's location, and the offset bytes
-	for _, v := range torr.SegmentHashKeys {
+	for _, v := range torr.LayerHashKeys {
 		fmt.Println("I know of layer " + v)
 		globalHashes = append(globalHashes, v)
 	}
+
+	trans := transaction.PublishTorrentTrans{torr}
+	origin := transaction.AddressToOriginInfo(myAddress)
+	btt := transaction.TorrentTransaction{origin, trans, nil, nil}
+	signed := transaction.Sign(&myAddress.PrivateKey, btt)
+	full := transaction.MakeFull(signed, nil)
+	globalChain.AddTransaction(full, myAddress.Address)
 
 	fmt.Println("Please enter the port to be used for communicating with this node. Type \"done\" when you are finished")
 	scanner := bufio.NewScanner(os.Stdin)
@@ -68,10 +79,10 @@ func run() error {
 		// handle error.
 	}
 
-	//TODO Remove nil address reference
 	muxx := network.MakeMuxRouter()
 	network.Torrents = make([]files.TorrentFile, 0)
 	network.Torrents = append(network.Torrents, torr)
+	network.GlobalBlockchain = &globalChain
 
 	log.Println("Listening on ", httpAddr)
 	if httpAddr == "8080" {

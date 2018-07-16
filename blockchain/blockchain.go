@@ -97,28 +97,28 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 
 //TODO refactor to support "reputation"
 //This will need refactoring to support a wide variety of inquiries
-func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
-	balance := 0.0
-
-	for i, block := range chain.Blocks { //all blocks
-		if i >= startIndex {
-			for _, trans := range block.Transactions { //all transactions
-
-				if w, ok := trans.SignedTrans.(transaction.SignedTransaction); ok {
-					//If a signed transaction (not another signable)
-
-					if w.Origin.Address == addr { //same address (transfer out)
-						balance -= w.Quantity
-					} else if w.DestAddr == addr { //same address (transfer in)
-						balance += w.Quantity
-					}
-				}
-
-			}
-		}
-	}
-	return balance
-}
+//func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
+//	balance := 0.0
+//
+//	for i, block := range chain.Blocks { //all blocks
+//		if i >= startIndex {
+//			for _, trans := range block.Transactions { //all transactions
+//
+//				if w, ok := trans.SignedTrans.(transaction.SignedTransaction); ok {
+//					//If a signed transaction (not another signable)
+//
+//					if w.Origin.Address == addr { //same address (transfer out)
+//						balance -= w.Quantity
+//					} else if w.DestAddr == addr { //same address (transfer in)
+//						balance += w.Quantity
+//					}
+//				}
+//
+//			}
+//		}
+//	}
+//	return balance
+//}
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
 //possible replacing chain of longer length than the other
@@ -146,9 +146,9 @@ func (chain BlockChain) GetNewestBlock() Block {
 
 //MakeInitialChain constructs a simple new blockchain, with an initial block paying out to the provided address
 //This is a basic test to stimulate the network with an initial balance/transaction
-func MakeInitialChain(payoutAddr transaction.Base64Address) BlockChain {
+func MakeInitialChain() BlockChain {
 	chain := BlockChain{Blocks: make([]Block, 1)}
-	chain.Blocks[0] = InitialBlock(payoutAddr)
+	chain.Blocks[0] = InitialBlock()
 	return chain
 }
 

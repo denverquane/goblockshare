@@ -5,7 +5,7 @@ import (
 )
 
 func TestInitialBlock(t *testing.T) {
-	block := InitialBlock("")
+	block := InitialBlock()
 
 	if block.Index != 0 || block.GetHash() != block.Hash {
 		t.Fail()
@@ -13,8 +13,8 @@ func TestInitialBlock(t *testing.T) {
 }
 
 func TestIsBlockSequenceValid(t *testing.T) {
-	block := InitialBlock("")
-	failBlock := InitialBlock("")
+	block := InitialBlock()
+	failBlock := InitialBlock()
 
 	if IsBlockSequenceValid(block, failBlock) {
 		t.Fail()

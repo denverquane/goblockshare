@@ -1,5 +1,5 @@
 package blockchain
 
 type Hashable interface {
-	GetHash() string
+	GetHash() []byte
 }
