@@ -6,8 +6,9 @@ import (
 
 func TestInitialBlock(t *testing.T) {
 	block := InitialBlock()
+	hash, _ := block.GetHash(true)
 
-	if block.Index != 0 || block.GetHash() != block.Hash {
+	if block.Index != 0 || hash != block.Hash {
 		t.Fail()
 	}
 }
@@ -33,7 +34,7 @@ func TestIsBlockSequenceValid(t *testing.T) {
 	}
 
 	//Rehashing *should* fix it!
-	failBlock.Hash = failBlock.GetHash()
+	failBlock.Hash, _ = failBlock.GetHash(true)
 	if !IsBlockSequenceValid(failBlock, block) {
 		t.Fail()
 	}
