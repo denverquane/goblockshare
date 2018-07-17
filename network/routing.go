@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"os"
 )
 
 var GlobalBlockchain *blockchain.BlockChain
@@ -19,6 +20,7 @@ func MakeMuxRouter() http.Handler {
 
 	muxRouter.HandleFunc("/", handleGetTorrents).Methods("GET")
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("GET")
 	//muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/addTorrent", handleReceiveTorrent).Methods("POST")
 
@@ -44,6 +46,37 @@ func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	io.WriteString(w, string(data))
+}
+
+func handleGetLayer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	layerId := vars["layer"]
+	if Torrents == nil {
+		http.Error(w, "Don't have any torrents", http.StatusInternalServerError)
+		return
+	}
+
+	for _, torr := range Torrents {
+		for key, meta := range torr.GetLayerHashMap() {
+			if key == layerId {
+				file, err := os.Open(torr.GetUrl())
+				defer file.Close()
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				data := make([]byte, meta.Offset)
+
+				file.ReadAt(data, meta.Begin)
+				io.WriteString(w, string(data))
+			}
+		}
+	}
+
+	fmt.Println("GET layer: " + layerId)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func handleGetTorrents(w http.ResponseWriter, _ *http.Request) {

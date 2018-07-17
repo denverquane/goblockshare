@@ -159,7 +159,6 @@ func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
 	accurateNameTorrents := 0
 	totalTorrents := 0
 
-
 	validLayers := 0
 	totalLayers := 0
 

@@ -60,7 +60,7 @@ func run() error {
 				if name == "" {
 					name = url
 				}
-				jobs <- torrFileSpecs{url, 1000 * 1000, name}
+				jobs <- torrFileSpecs{url, 1000, name}
 				totalJobs++
 				fmt.Println("Added " + name + " to job queue")
 				break
@@ -120,6 +120,9 @@ func run() error {
 	return nil
 }
 
+//torrentWorker represents a worker that should process a file on the local filesystem and process it into an
+//internal TorrentFile. This could potentially still be a bottleneck from the underlying I/O filesystem, but processing
+//entirely separate files is inherently parallelizable
 func torrentWorker(id int, jobs <-chan torrFileSpecs, results chan<- files.TorrentFile) {
 	for job := range jobs {
 		torr, err := files.MakeTorrentFileFromFile(job.layerByteSize, job.url, job.name)
