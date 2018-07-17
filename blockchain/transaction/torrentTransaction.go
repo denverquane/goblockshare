@@ -24,8 +24,8 @@ func (st TorrentTransaction) GetRS() (*big.Int, *big.Int) {
 
 func (st TorrentTransaction) GetHash(haveRSbeenSet bool) []byte {
 	h := sha256.New()
-	h.Write(st.Origin.GetHash())
-	h.Write(st.Transaction.GetHash())
+	h.Write(st.Origin.GetRawBytes())
+	h.Write(st.Transaction.GetRawBytes())
 
 	//Filters the cases where we just want the hash for non-signing purposes
 	//(if the transaction hasn't been signed, we shouldn't hash R and S as they don't matter)
@@ -46,7 +46,7 @@ func (st TorrentTransaction) GetType() string {
 
 func (st TorrentTransaction) ToString() string {
 	return st.Origin.ToString() + "\"txref\":[],\n" +
-		st.Transaction.ToString() + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
+		string(st.Transaction.GetRawBytes()) + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
 		st.S.String() + "\n}\n"
 }
 
@@ -58,8 +58,8 @@ type PublishTorrentTrans struct {
 func (tt PublishTorrentTrans) GetType() string {
 	return "PUBLISH_TORRENT"
 }
-func (tt PublishTorrentTrans) GetHash() []byte {
-	return tt.Torrent.GetHash()
+func (tt PublishTorrentTrans) GetRawBytes() []byte {
+	return tt.Torrent.GetRawBytes()
 }
 func (tt PublishTorrentTrans) ToString() string {
 	return tt.Torrent.ToString()
@@ -73,11 +73,8 @@ type SharedLayerTrans struct {
 func (lt SharedLayerTrans) GetType() string {
 	return "SHARED_LAYER"
 }
-func (lt SharedLayerTrans) GetHash() []byte {
-	h := sha256.New()
-	h.Write(lt.SharedLayerHash)
-	h.Write([]byte(lt.Recipient))
-	return h.Sum(nil)
+func (lt SharedLayerTrans) GetRawBytes() []byte {
+	return []byte(string(lt.SharedLayerHash) + string(lt.Recipient))
 }
 func (lt SharedLayerTrans) ToString() string {
 	return "Shared " + string(lt.SharedLayerHash) + " with " + string(lt.Recipient)
@@ -86,34 +83,52 @@ func (lt SharedLayerTrans) ToString() string {
 
 type LayerRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
-	RepMessage	string //TODO should probably be a more complex message later
+	WasLayerValid	bool //TODO should probably be a more complex message later
 }
 func (rt LayerRepTrans) GetType() string {
 	return "LAYER_REP"
 }
-func (rt LayerRepTrans) GetHash() []byte {
-	h := sha256.New()
-	h.Write([]byte(rt.TxID))
-	h.Write([]byte(rt.RepMessage))
-	return h.Sum(nil)
+func (rt LayerRepTrans) GetRawBytes() []byte {
+	return []byte(rt.TxID + string(boolToByte(rt.WasLayerValid)))
 }
 func (rt LayerRepTrans) ToString() string {
-	return "Gave " + rt.RepMessage + " rep for layer shared in TX: " + rt.TxID
+	return "Gave " + string(boolToByte(rt.WasLayerValid)) + " rep for layer shared in TX: " + rt.TxID
+}
+
+func boolToByte(v bool) byte {
+	if v {
+		return 't'
+	} else {
+		return 'f'
+	}
+}
+
+type RepMessage struct {
+	WasValid	 bool
+	HighQuality  bool
+	AccurateName bool
+}
+
+func (rm RepMessage) toBytes() []byte {
+	b := make([]byte, 3)
+	b[0] = boolToByte(rm.WasValid)
+	b[1] = boolToByte(rm.HighQuality)
+	b[2] = boolToByte(rm.AccurateName)
+	return b
 }
 
 type TorrentRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
-	RepMessage	string //TODO should probably be a more complex message later (esp for torrents
+	RepMessage	RepMessage //TODO should probably be a more complex message later (esp for torrents
 }
 func (rt TorrentRepTrans) GetType() string {
 	return "TORRENT_REP"
 }
-func (rt TorrentRepTrans) GetHash() []byte {
-	h := sha256.New()
-	h.Write([]byte(rt.TxID))
-	h.Write([]byte(rt.RepMessage))
-	return h.Sum(nil)
+
+
+func (rt TorrentRepTrans) GetRawBytes() []byte {
+	return []byte(rt.TxID + string(rt.RepMessage.toBytes()))
 }
 func (rt TorrentRepTrans) ToString() string {
-	return "Gave " + rt.RepMessage + " rep for torrent shared in TX: " + rt.TxID
+	return "Gave " + string(rt.RepMessage.toBytes()) + " rep for torrent shared in TX: " + rt.TxID
 }

@@ -31,6 +31,8 @@ type Block struct {
 	PrevHash     string
 	Difficulty   int
 	Nonce        string
+
+	cachedTransHash	 string
 	mux          sync.Mutex
 }
 
@@ -82,11 +84,12 @@ func InitialBlock() Block {
 
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
+	initBlock.cachedTransHash = ""
 
 	for i := 0; !isHashValid(initBlock.Hash, 3); i++ {
 		hexx := fmt.Sprintf("%x", i)
 		initBlock.Nonce = hexx
-		initBlock.Hash = initBlock.GetHash()
+		initBlock.Hash, initBlock.cachedTransHash = initBlock.GetHash(initBlock.cachedTransHash == "")
 	}
 
 	return initBlock
@@ -96,7 +99,7 @@ func InitialBlock() Block {
 //difficulty
 func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 	block.mux.Lock()
-	block.Hash = block.GetHash()
+	block.Hash, block.cachedTransHash = block.GetHash(true)
 	block.mux.Unlock()
 
 	for i := 0; !isHashValid(block.Hash, difficulty); i++ {
@@ -104,7 +107,7 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 		hexx := fmt.Sprintf("%x", i)
 		block.mux.Lock()
 		block.Nonce = hexx
-		block.Hash = block.GetHash()
+		block.Hash, block.cachedTransHash = block.GetHash(block.cachedTransHash == "")
 		block.mux.Unlock()
 	}
 	c <- true
@@ -115,21 +118,30 @@ func (block *Block) AddTransaction(trans transaction.FullTransaction) {
 	fmt.Println("Adding transaction to mining block")
 	block.mux.Lock()
 	block.Transactions = append(block.Transactions, trans)
+	block.cachedTransHash = "" //cached transactions are invalid now
 	block.mux.Unlock()
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes
-func (block Block) GetHash() string {
+func (block Block) GetHash(rehashTransactions bool) (string, string) {
 
 	record := string(block.Index) + block.Timestamp
-	for _, v := range block.Transactions {
-		record += string(v.GetHash())
+	trans := ""
+	if rehashTransactions {
+		fmt.Println("recalculating trans hash")
+
+		for _, v := range block.Transactions {
+			trans += string(v.GetHash())
+		}
+	} else {
+		trans = block.cachedTransHash
 	}
+	record += trans
 	record += block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
-	return hex.EncodeToString(hashed)
+	return hex.EncodeToString(hashed), trans
 }
 
 func isHashValid(hash string, difficulty int) bool {
@@ -180,7 +192,7 @@ func IsBlockSequenceValid(newBlock, oldBlock Block) bool {
 		return false
 	}
 
-	str := newBlock.GetHash()
+	str, _ := newBlock.GetHash(true)
 	if str != newBlock.Hash {
 		log.Println(newBlock.ToString() + "has a hash that doesn't match: " + str)
 		return false

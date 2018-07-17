@@ -34,18 +34,17 @@ func (torr TorrentFile) ToString() string {
 	return a
 }
 
-func (torr TorrentFile) GetHash() []byte {
-	h := sha256.New()
+func (torr TorrentFile) GetRawBytes() []byte {
+	ret := make([]byte, 0)
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(torr.LayerByteSize)) //convert from int to []byte
-	h.Write(b)
+	ret = append(ret, b...)
 
 	for _, v := range torr.LayerHashKeys {
-		h.Write([]byte(v))             //write the hashed key
-		h.Write(torr.layerHashMaps[v]) //get the raw bytes associated with the hash
+		ret = append(ret, []byte(v)...)             //write the hashed key
+		ret = append(ret, torr.layerHashMaps[v]...) //get the raw bytes associated with the hash
 	}
-
-	return h.Sum(nil)
+	return ret
 }
 
 func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (TorrentFile, error) {
@@ -103,8 +102,8 @@ func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (Torr
 //}
 
 func (torr1 TorrentFile) Equals(torr2 TorrentFile) bool {
-	h1 := torr1.GetHash()
-	h2 := torr2.GetHash()
+	h1 := torr1.GetRawBytes()
+	h2 := torr2.GetRawBytes()
 
 	for i, v := range h1 {
 		if v != h2[i] {

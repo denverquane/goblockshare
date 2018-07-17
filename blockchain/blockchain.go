@@ -133,7 +133,9 @@ func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
 	for i := 0; i < min; i++ {
 		a := chain1.Blocks[i]
 		b := chain2.Blocks[i]
-		if a.GetHash() != b.GetHash() {
+		ah, _ := a.GetHash(true)
+		bh, _ := b.GetHash(true)
+		if ah != bh {
 			return false
 		}
 	}

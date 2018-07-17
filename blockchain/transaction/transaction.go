@@ -12,8 +12,7 @@ import (
 
 type Transaction interface {
 	GetType() string
-	GetHash() []byte
-	ToString() string
+	GetRawBytes() []byte
 }
 
 type SignableTransaction interface {
@@ -67,12 +66,8 @@ type OriginInfo struct {
 	Address Base64Address
 }
 
-func (oi OriginInfo) GetHash() []byte {
-	h := sha256.New()
-	h.Write(oi.PubKeyX.Bytes())
-	h.Write(oi.PubKeyY.Bytes())
-	h.Write([]byte(oi.Address))
-	return h.Sum(nil)
+func (oi OriginInfo) GetRawBytes() []byte {
+	return []byte(string(oi.PubKeyX.Bytes()) + string(oi.PubKeyY.Bytes()) + string(oi.Address))
 }
 
 func (oi OriginInfo) ToString() string {
