@@ -40,10 +40,6 @@ func (st TorrentTransaction) GetOrigin() OriginInfo {
 	return st.Origin
 }
 
-func (st TorrentTransaction) GetType() string {
-	return st.Transaction.GetType()
-}
-
 func (st TorrentTransaction) ToString() string {
 	return st.Origin.ToString() + "\"txref\":[],\n" +
 		string(st.Transaction.GetRawBytes()) + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
@@ -54,9 +50,10 @@ func (st TorrentTransaction) ToString() string {
 
 type PublishTorrentTrans struct {
 	Torrent files.TorrentFile
+	Type 	string
 }
 func (tt PublishTorrentTrans) GetType() string {
-	return "PUBLISH_TORRENT"
+	return tt.Type
 }
 func (tt PublishTorrentTrans) GetRawBytes() []byte {
 	return tt.Torrent.GetRawBytes()
@@ -69,9 +66,10 @@ func (tt PublishTorrentTrans) ToString() string {
 type SharedLayerTrans struct {
 	SharedLayerHash []byte
 	Recipient		Base64Address
+	Type 			string
 }
 func (lt SharedLayerTrans) GetType() string {
-	return "SHARED_LAYER"
+	return lt.Type
 }
 func (lt SharedLayerTrans) GetRawBytes() []byte {
 	return []byte(string(lt.SharedLayerHash) + string(lt.Recipient))
@@ -84,9 +82,10 @@ func (lt SharedLayerTrans) ToString() string {
 type LayerRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
 	WasLayerValid	bool //TODO should probably be a more complex message later
+	Type 		string
 }
 func (rt LayerRepTrans) GetType() string {
-	return "LAYER_REP"
+	return rt.Type
 }
 func (rt LayerRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + string(boolToByte(rt.WasLayerValid)))
@@ -120,12 +119,11 @@ func (rm RepMessage) toBytes() []byte {
 type TorrentRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
 	RepMessage	RepMessage //TODO should probably be a more complex message later (esp for torrents
+	Type 		string
 }
 func (rt TorrentRepTrans) GetType() string {
-	return "TORRENT_REP"
+	return rt.Type
 }
-
-
 func (rt TorrentRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + string(rt.RepMessage.toBytes()))
 }

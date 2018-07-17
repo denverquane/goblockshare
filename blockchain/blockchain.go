@@ -3,6 +3,7 @@ package blockchain
 import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
+	"strconv"
 )
 
 type BlockChain struct {
@@ -29,6 +30,17 @@ func (chain BlockChain) ToString() string {
 	return str
 }
 
+func (chain BlockChain) GetTxById(txid string) transaction.FullTransaction {
+	for _, block := range chain.Blocks {
+		for _, tx := range block.Transactions {
+			if tx.TxID == txid {
+				return tx
+			}
+		}
+	}
+	return transaction.FullTransaction{}
+}
+
 //IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
 //and that the hashes linking blocks are valid linkages (make sure previous hash actually matches the previous block's
 //hash, for example)
@@ -52,16 +64,7 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) AddTransaction(trans transaction.FullTransaction, payableAddress transaction.Base64Address) (string, bool) {
-	//balance := chain.GetAddrBalanceFromInclusiveIndex(0, trans.SignedTrans.Origin.Address, trans.SignedTrans.Currency)
-	//fmt.Println("Checking balance of:" + trans.SignedTrans.Currency)
-	//fmt.Println(balance)
-	//if balance < trans.SignedTrans.Quantity {
-	//	return "Insufficient balance! Invalid transaction!", false
-	//}
-
-	//todo check balances ONLY when the transaction is a signed type (not a channel creation type)
-
+func (chain *BlockChain) addTransaction(trans transaction.FullTransaction, payableAddress transaction.Base64Address) (string, bool) {
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
 		fmt.Println("Added transaction to mining block")
@@ -95,30 +98,15 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	chain.processingBlock = nil
 }
 
-//TODO refactor to support "reputation"
-//This will need refactoring to support a wide variety of inquiries
-//func (chain BlockChain) GetAddrBalanceFromInclusiveIndex(startIndex int, addr transaction.Base64Address, currency string) float64 {
-//	balance := 0.0
-//
-//	for i, block := range chain.Blocks { //all blocks
-//		if i >= startIndex {
-//			for _, trans := range block.Transactions { //all transactions
-//
-//				if w, ok := trans.SignedTrans.(transaction.SignedTransaction); ok {
-//					//If a signed transaction (not another signable)
-//
-//					if w.Origin.Address == addr { //same address (transfer out)
-//						balance -= w.Quantity
-//					} else if w.DestAddr == addr { //same address (transfer in)
-//						balance += w.Quantity
-//					}
-//				}
-//
-//			}
-//		}
-//	}
-//	return balance
-//}
+func (chain *BlockChain) CreateAndAddTransaction(originAddr transaction.PersonalAddress,
+	trans transaction.Transaction) transaction.FullTransaction {
+	origin := transaction.AddressToOriginInfo(originAddr)
+	btt := transaction.TorrentTransaction{origin, trans, nil, nil}
+	signed := transaction.Sign(&originAddr.PrivateKey, btt)
+	full := transaction.MakeFull(signed.(transaction.TorrentTransaction), nil)
+	chain.addTransaction(full, originAddr.Address)
+	return full
+}
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
 //possible replacing chain of longer length than the other
@@ -163,4 +151,53 @@ func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
 		}
 	}
 	return chain
+}
+
+func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
+	validTorrents := 0
+	qualityTorrents := 0
+	accurateNameTorrents := 0
+	totalTorrents := 0
+
+
+	validLayers := 0
+	totalLayers := 0
+
+	for _, block := range chain.Blocks {
+		for _, tx := range block.Transactions {
+			tType := tx.SignedTrans.Transaction.GetType()
+			if tType == "TORRENT_REP" {
+				torrentRep := tx.SignedTrans.Transaction.(transaction.TorrentRepTrans)
+				txId := torrentRep.TxID
+				if chain.GetTxById(txId).SignedTrans.Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
+					if torrentRep.RepMessage.AccurateName {
+						accurateNameTorrents++
+					}
+					if torrentRep.RepMessage.HighQuality {
+						qualityTorrents++
+					}
+					if torrentRep.RepMessage.WasValid {
+						validTorrents++
+					}
+					totalTorrents++
+				}
+			} else if tType == "LAYER_REP" {
+				layerRep := tx.SignedTrans.Transaction.(transaction.LayerRepTrans)
+				txId := layerRep.TxID
+				if chain.GetTxById(txId).SignedTrans.Origin.Address == addr {
+					if layerRep.WasLayerValid {
+						validLayers++
+					}
+					totalLayers++
+				}
+			}
+		}
+	}
+	valid := (float64(validTorrents) / float64(totalTorrents)) * 100.0
+	quality := (float64(qualityTorrents) / float64(totalTorrents)) * 100.0
+	accurate := (float64(accurateNameTorrents) / float64(totalTorrents)) * 100.0
+
+	return "Had " + strconv.FormatFloat(valid, 'f', -1, 64) + " valid, " +
+		strconv.FormatFloat(quality, 'f', -1, 64) + " quality, and " +
+		strconv.FormatFloat(accurate, 'f', -1, 64) + " accurate, and a total of " + strconv.Itoa(totalTorrents)
 }

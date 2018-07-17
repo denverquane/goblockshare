@@ -16,7 +16,6 @@ type Transaction interface {
 }
 
 type SignableTransaction interface {
-	GetType() string
 	GetHash(bool) []byte
 	SetRS(*big.Int, *big.Int) SignableTransaction
 	GetRS() (*big.Int, *big.Int)
@@ -54,7 +53,7 @@ func VerifyWithKey(st SignableTransaction, key ecdsa.PublicKey) bool {
 	return ecdsa.Verify(&key, st.GetHash(false), r, s)
 }
 
-func MakeFull(st SignableTransaction, txref []string) FullTransaction {
+func MakeFull(st TorrentTransaction, txref []string) FullTransaction {
 	full := FullTransaction{st, txref, ""}
 	full.TxID = hex.EncodeToString(full.GetHash())
 	return full
@@ -96,7 +95,7 @@ func AddressToOriginInfo(address PersonalAddress) OriginInfo {
 //}
 
 type FullTransaction struct {
-	SignedTrans SignableTransaction
+	SignedTrans TorrentTransaction
 	TxRef       []string
 	TxID        string
 }
