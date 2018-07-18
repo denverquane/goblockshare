@@ -10,32 +10,62 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
-var GlobalBlockchain *blockchain.BlockChain
-var Torrents []files.TorrentFile
+var globalBlockchain *blockchain.BlockChain
+var torrents []files.TorrentFile
+var layers map[string]files.LayerFileMetadata
 
 func MakeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
-	muxRouter.HandleFunc("/", handleGetTorrents).Methods("GET")
+	muxRouter.HandleFunc("/torrents", handleGetTorrents).Methods("GET")
+	muxRouter.HandleFunc("/layers", handleGetLayers).Methods("GET")
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
+
 	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("GET")
 	//muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
-	muxRouter.HandleFunc("/addTorrent", handleReceiveTorrent).Methods("POST")
+	muxRouter.HandleFunc("/addLayer/{layer}", handleReceiveLayer).Methods("POST")
 
 	return muxRouter
 }
 
+func RegisterBlockchain(chain *blockchain.BlockChain) {
+	if globalBlockchain == nil {
+		globalBlockchain = chain
+	} else {
+		fmt.Println("chain already set!")
+	}
+}
+
+func RegisterTorrent(file files.TorrentFile) {
+	if torrents == nil {
+		torrents = make([]files.TorrentFile, 0)
+	}
+	torrents = append(torrents, file)
+	for key, hash := range file.GetLayerHashMap() {
+		AddLayer(key, hash)
+	}
+}
+
+func AddLayer(id string, metadata files.LayerFileMetadata) {
+	if layers == nil {
+		layers = make(map[string]files.LayerFileMetadata, 0)
+	}
+	layers[id] = metadata
+}
+
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 	// vars := mux.Vars(r)
-	if GlobalBlockchain == nil {
+	if globalBlockchain == nil {
 		fmt.Println("Don't have blockchain; making new one")
 		temp := blockchain.MakeInitialChain()
-		GlobalBlockchain = &temp
+		globalBlockchain = &temp
 	}
 
-	data, err := json.MarshalIndent(*GlobalBlockchain, "", " ")
+	data, err := json.MarshalIndent(*globalBlockchain, "", " ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,12 +81,12 @@ func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	layerId := vars["layer"]
-	if Torrents == nil {
+	if torrents == nil {
 		http.Error(w, "Don't have any torrents", http.StatusInternalServerError)
 		return
 	}
 
-	for _, torr := range Torrents {
+	for _, torr := range torrents {
 		for key, meta := range torr.GetLayerHashMap() {
 			if key == layerId {
 				file, err := os.Open(torr.GetUrl())
@@ -65,10 +95,13 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-				data := make([]byte, meta.Offset)
+				data := make([]byte, meta.Size)
 
 				file.ReadAt(data, meta.Begin)
-				io.WriteString(w, string(data))
+
+				h := sha256.New()
+				h.Write(data)
+				io.WriteString(w, string(data) + "\n\nHASH: " + hex.EncodeToString(h.Sum(nil)))
 			}
 		}
 	}
@@ -80,12 +113,12 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetTorrents(w http.ResponseWriter, _ *http.Request) {
-	if Torrents == nil {
+	if torrents == nil {
 		fmt.Println("Don't have torrents; making new array")
-		Torrents = make([]files.TorrentFile, 0)
+		torrents = make([]files.TorrentFile, 0)
 	}
 
-	data, err := json.MarshalIndent(Torrents, "", " ")
+	data, err := json.MarshalIndent(torrents, "", " ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -98,18 +131,51 @@ func handleGetTorrents(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, string(data))
 }
 
-func handleReceiveTorrent(w http.ResponseWriter, r *http.Request) {
-	var message files.TorrentFile
+func handleGetLayers(w http.ResponseWriter, _ *http.Request) {
+	if layers == nil {
+		fmt.Println("Don't have torrents; making new array")
+		layers = make(map[string]files.LayerFileMetadata, 0)
+	}
+
+	data, err := json.MarshalIndent(layers, "", " ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("GET torrents")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	io.WriteString(w, string(data))
+}
+
+func handleReceiveLayer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	layerId := vars["layer"]
+	var message string
 
 	decoder := json.NewDecoder(r.Body)
+
 	if err := decoder.Decode(&message); err != nil {
-		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		respondWithJSON(w, r, http.StatusBadRequest, err)
 		return
 	}
 	defer r.Body.Close()
 
+	byteMsg := []byte(message)
+
 	respondWithJSON(w, r, http.StatusCreated, message)
-	fmt.Println(message.Validate())
+	h := sha256.New()
+	h.Write(byteMsg)
+	if hex.EncodeToString(h.Sum(nil)) == layerId {
+
+		fmt.Println("Received valid layer entry for " + layerId)
+		layerdata := files.AppendLayerDataToFile(layerId, byteMsg)
+		AddLayer(layerId, layerdata)
+	} else {
+		fmt.Println("Hash didn't match")
+	}
 }
 
 /* Below is an example of the input format for writing a transaction via the REST API:
@@ -151,7 +217,7 @@ func handleReceiveTorrent(w http.ResponseWriter, r *http.Request) {
 //		return
 //	}
 //
-//	message, success := GlobalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
+//	message, success := globalBlockchain.AddTransaction(trans, trans.SignedTrans.GetOrigin().Address)
 //	if !success {
 //		respondWithJSON(w, r, http.StatusBadRequest, message)
 //	} else {

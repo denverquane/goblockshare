@@ -153,6 +153,7 @@ func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
 	return chain
 }
 
+//GetAddressRep gets the reputation associated with a particular address by exploring the blockchain
 func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
 	validTorrents := 0
 	qualityTorrents := 0

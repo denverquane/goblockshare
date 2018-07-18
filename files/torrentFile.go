@@ -9,8 +9,9 @@ import (
 )
 
 type LayerFileMetadata struct {
+	fileUrl string //used specifically when receiving layers from other sources (without having an entire file yet)
 	Begin int64
-	Offset int64
+	Size int64
 }
 
 type TorrentFile struct {
@@ -65,7 +66,7 @@ func (torr TorrentFile) GetRawBytes() []byte {
 
 		ret = append(ret, Int64ToByteArr(torr.layerHashMaps[v].Begin)...)
 
-		ret = append(ret, Int64ToByteArr(torr.layerHashMaps[v].Offset)...)
+		ret = append(ret, Int64ToByteArr(torr.layerHashMaps[v].Size)...)
 	}
 	return ret
 }
@@ -144,9 +145,9 @@ func (torr TorrentFile) Validate() (bool, error) {
 	}
 
 	for hash, raw := range torr.layerHashMaps {
-		bytes := make([]byte, raw.Offset)
+		bytes := make([]byte, raw.Size)
 		read, _ := file.ReadAt(bytes, raw.Begin)
-		if hex.EncodeToString(hashSegment(bytes)) != hash || int64(read) != raw.Offset{
+		if hex.EncodeToString(hashSegment(bytes)) != hash || int64(read) != raw.Size{
 			return false, nil
 		}
 	}
@@ -175,7 +176,7 @@ func (file *TorrentFile) appendNewSegment(segData []byte, min int64, max int64) 
 			file.duplicatesMaps[hexHashed] = 1 //this is the 2nd occurrence (counter starts at 1 for "1st duplicate")
 		}
 	} else {
-		file.layerHashMaps[hexHashed] = LayerFileMetadata{min, max}
+		file.layerHashMaps[hexHashed] = LayerFileMetadata{file.url, min, max}
 	}
 }
 
@@ -183,4 +184,25 @@ func hashSegment(seg []byte) []byte {
 	h := sha256.New()
 	h.Write(seg)
 	return h.Sum(nil)
+}
+
+func AppendLayerDataToFile(layerId string, data []byte) LayerFileMetadata {
+	f, err := os.OpenFile("layers.data", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	info, _ := f.Stat()
+	offset := info.Size()
+
+	var keyData = []byte(layerId + ":")
+	offset += int64(len(keyData)) //how much we are actually offset before we write raw data
+	writeSize := len(data)
+
+	defer f.Close()
+
+	if _, err = f.WriteString(string(keyData) + string(data) + "\n"); err != nil {
+		panic(err)
+	}
+	return LayerFileMetadata{"layers.data", offset, int64(writeSize)}
 }

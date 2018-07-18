@@ -77,15 +77,14 @@ func run() error {
 		// handle error.
 	}
 	muxx := network.MakeMuxRouter()
-	network.Torrents = make([]files.TorrentFile, 0)
-	network.GlobalBlockchain = &globalChain
+	network.RegisterBlockchain(&globalChain)
 	
 	for i := 0; i<totalJobs; i++ {
 		file := <-results
 		if file.Name != "" {
 			trans := transaction.PublishTorrentTrans{file, "PUBLISH_TORRENT"}
 			full := globalChain.CreateAndAddTransaction(myAddress, trans)
-			network.Torrents = append(network.Torrents, file)
+			network.RegisterTorrent(file)
 
 			trans2 := transaction.TorrentRepTrans{full.TxID, transaction.RepMessage{true, true, true}, "TORRENT_REP"}
 			globalChain.CreateAndAddTransaction(myAddress, trans2)
