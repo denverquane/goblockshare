@@ -1,52 +1,36 @@
 package transaction
 
 import (
-	"crypto/sha256"
-	"math/big"
 	"github.com/denverquane/GoBlockShare/files"
 )
 
-type TorrentTransaction struct {
-	Origin   	OriginInfo // needed to say who I am (WITHIN the transaction)
-	Transaction	Transaction
-	R, S     *big.Int // signature of the transaction, should be separate from the actual "message" components
+type TorrentTransaction interface {
+	GetType() string
+	GetRawBytes() []byte
+	ToString() string
 }
 
-func (st TorrentTransaction) SetRS(r *big.Int, s *big.Int) SignableTransaction {
-	st.R = r
-	st.S = s
-	return st
+type RepMessage struct {
+	WasValid	 bool
+	HighQuality  bool
+	AccurateName bool
 }
 
-func (st TorrentTransaction) GetRS() (*big.Int, *big.Int) {
-	return st.R, st.S
+func (rm RepMessage) toBytes() []byte {
+	b := make([]byte, 3)
+	b[0] = boolToByte(rm.WasValid)
+	b[1] = boolToByte(rm.HighQuality)
+	b[2] = boolToByte(rm.AccurateName)
+	return b
 }
 
-func (st TorrentTransaction) GetHash(haveRSbeenSet bool) []byte {
-	h := sha256.New()
-	h.Write(st.Origin.GetRawBytes())
-	h.Write(st.Transaction.GetRawBytes())
-
-	//Filters the cases where we just want the hash for non-signing purposes
-	//(if the transaction hasn't been signed, we shouldn't hash R and S as they don't matter)
-	if haveRSbeenSet {
-		h.Write(st.R.Bytes())
-		h.Write(st.S.Bytes())
+func boolToByte(v bool) byte {
+	if v {
+		return 't'
+	} else {
+		return 'f'
 	}
-	return h.Sum(nil)
 }
-
-func (st TorrentTransaction) GetOrigin() OriginInfo {
-	return st.Origin
-}
-
-func (st TorrentTransaction) ToString() string {
-	return st.Origin.ToString() + "\"txref\":[],\n" +
-		string(st.Transaction.GetRawBytes()) + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
-		st.S.String() + "\n}\n"
-}
-
-
 
 type PublishTorrentTrans struct {
 	Torrent files.TorrentFile
@@ -92,28 +76,6 @@ func (rt LayerRepTrans) GetRawBytes() []byte {
 }
 func (rt LayerRepTrans) ToString() string {
 	return "Gave " + string(boolToByte(rt.WasLayerValid)) + " rep for layer shared in TX: " + rt.TxID
-}
-
-func boolToByte(v bool) byte {
-	if v {
-		return 't'
-	} else {
-		return 'f'
-	}
-}
-
-type RepMessage struct {
-	WasValid	 bool
-	HighQuality  bool
-	AccurateName bool
-}
-
-func (rm RepMessage) toBytes() []byte {
-	b := make([]byte, 3)
-	b[0] = boolToByte(rm.WasValid)
-	b[1] = boolToByte(rm.HighQuality)
-	b[2] = boolToByte(rm.AccurateName)
-	return b
 }
 
 type TorrentRepTrans struct {

@@ -14,6 +14,10 @@ type LayerFileMetadata struct {
 	Size int64
 }
 
+func (lm LayerFileMetadata) GetUrl() string {
+	return lm.fileUrl
+}
+
 type TorrentFile struct {
 	Name          string
 	LayerByteSize int64

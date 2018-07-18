@@ -81,29 +81,27 @@ func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	layerId := vars["layer"]
-	if torrents == nil {
-		http.Error(w, "Don't have any torrents", http.StatusInternalServerError)
+	if layers == nil {
+		http.Error(w, "Don't have any layers", http.StatusInternalServerError)
 		return
 	}
 
-	for _, torr := range torrents {
-		for key, meta := range torr.GetLayerHashMap() {
+	for key, layer := range layers {
 			if key == layerId {
-				file, err := os.Open(torr.GetUrl())
+				file, err := os.Open(layer.GetUrl())
 				defer file.Close()
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-				data := make([]byte, meta.Size)
+				data := make([]byte, layer.Size)
 
-				file.ReadAt(data, meta.Begin)
+				file.ReadAt(data, layer.Begin)
 
 				h := sha256.New()
 				h.Write(data)
 				io.WriteString(w, string(data) + "\n\nHASH: " + hex.EncodeToString(h.Sum(nil)))
 			}
-		}
 	}
 
 	fmt.Println("GET layer: " + layerId)

@@ -30,7 +30,7 @@ func (chain BlockChain) ToString() string {
 	return str
 }
 
-func (chain BlockChain) GetTxById(txid string) transaction.FullTransaction {
+func (chain BlockChain) GetTxById(txid string) transaction.SignableTransaction {
 	for _, block := range chain.Blocks {
 		for _, tx := range block.Transactions {
 			if tx.TxID == txid {
@@ -38,7 +38,7 @@ func (chain BlockChain) GetTxById(txid string) transaction.FullTransaction {
 			}
 		}
 	}
-	return transaction.FullTransaction{}
+	return transaction.SignableTransaction{}
 }
 
 //IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
@@ -64,13 +64,13 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) addTransaction(trans transaction.FullTransaction, payableAddress transaction.Base64Address) (string, bool) {
+func (chain *BlockChain) addTransaction(trans transaction.SignableTransaction, payableAddress transaction.Base64Address) (string, bool) {
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
 		fmt.Println("Added transaction to mining block")
 		return "Added transaction to currently mining block", true
 	} else {
-		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.FullTransaction{trans}, payableAddress)
+		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.SignableTransaction{trans}, payableAddress)
 		if err != nil {
 			return err.Error(), false
 		}
@@ -99,13 +99,12 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 }
 
 func (chain *BlockChain) CreateAndAddTransaction(originAddr transaction.PersonalAddress,
-	trans transaction.Transaction) transaction.FullTransaction {
+	trans transaction.TorrentTransaction) transaction.SignableTransaction {
 	origin := transaction.AddressToOriginInfo(originAddr)
-	btt := transaction.TorrentTransaction{origin, trans, nil, nil}
-	signed := transaction.Sign(&originAddr.PrivateKey, btt)
-	full := transaction.MakeFull(signed.(transaction.TorrentTransaction), nil)
-	chain.addTransaction(full, originAddr.Address)
-	return full
+	btt := transaction.SignableTransaction{origin, trans, nil, nil, ""}
+	signed := btt.SignAndSetTxID(&originAddr.PrivateKey)
+	chain.addTransaction(signed, originAddr.Address)
+	return signed
 }
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
@@ -165,11 +164,11 @@ func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
 
 	for _, block := range chain.Blocks {
 		for _, tx := range block.Transactions {
-			tType := tx.SignedTrans.Transaction.GetType()
+			tType := tx.Transaction.GetType()
 			if tType == "TORRENT_REP" {
-				torrentRep := tx.SignedTrans.Transaction.(transaction.TorrentRepTrans)
+				torrentRep := tx.Transaction.(transaction.TorrentRepTrans)
 				txId := torrentRep.TxID
-				if chain.GetTxById(txId).SignedTrans.Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
+				if chain.GetTxById(txId).Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
 					if torrentRep.RepMessage.AccurateName {
 						accurateNameTorrents++
 					}
@@ -182,9 +181,9 @@ func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
 					totalTorrents++
 				}
 			} else if tType == "LAYER_REP" {
-				layerRep := tx.SignedTrans.Transaction.(transaction.LayerRepTrans)
+				layerRep := tx.Transaction.(transaction.LayerRepTrans)
 				txId := layerRep.TxID
-				if chain.GetTxById(txId).SignedTrans.Origin.Address == addr {
+				if chain.GetTxById(txId).Origin.Address == addr {
 					if layerRep.WasLayerValid {
 						validLayers++
 					}
