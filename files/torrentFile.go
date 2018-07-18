@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"encoding/binary"
+	"fmt"
 )
 
 type LayerFileMetadata struct {
@@ -191,6 +192,13 @@ func hashSegment(seg []byte) []byte {
 }
 
 func AppendLayerDataToFile(layerId string, data []byte) LayerFileMetadata {
+	h := sha256.New()
+	h.Write(data)
+	if hex.EncodeToString(h.Sum(nil)) != layerId {
+		fmt.Println("Id " + layerId + " hash doesn't match data hash!")
+		return LayerFileMetadata{}
+	}
+
 	f, err := os.OpenFile("layers.data", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)

@@ -100,7 +100,7 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 
 				h := sha256.New()
 				h.Write(data)
-				io.WriteString(w, string(data) + "\n\nHASH: " + hex.EncodeToString(h.Sum(nil)))
+				io.WriteString(w, string(data))
 			}
 	}
 

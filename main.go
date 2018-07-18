@@ -13,6 +13,7 @@ import (
 	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"bufio"
 	"strconv"
+	"io/ioutil"
 )
 
 type torrFileSpecs struct {
@@ -66,6 +67,7 @@ func run() error {
 				break
 			}
 		} else {
+			fmt.Println("Done receiving inputs")
 			close(jobs)
 			break
 		}
@@ -96,14 +98,6 @@ func run() error {
 		log.Println("(This is the same port used internally for running Docker builds - are you running within a container?)")
 	}
 
-	for scanner.Scan() {
-		if scanner.Text() != "" && scanner.Text() != "done" {
-			fmt.Println(globalChain.GetAddressRep(myAddress.Address))
-		} else {
-			break
-		}
-	}
-
 	s := &http.Server{
 		Addr:           ":" + httpAddr,
 		Handler:        muxx,
@@ -111,6 +105,8 @@ func run() error {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	go listenForInput()
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -131,5 +127,60 @@ func torrentWorker(id int, jobs <-chan torrFileSpecs, results chan<- files.Torre
 			fmt.Println("Worker " + strconv.Itoa(id) + " finished " + job.name)
 		}
 		results <- torr
+	}
+}
+
+func listenForInput() {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Please enter the IP and port of a node you wish to query for torrents and layers")
+	fmt.Println("For example (don't include http://): localhost:7070")
+
+	for scanner.Scan() {
+
+		if scanner.Text() != "quit" && scanner.Text() != "done" {
+			ip := scanner.Text()
+			resp, err := http.Get("http://" + ip + "/torrents")
+			if err != nil {
+				fmt.Println(err)
+				break
+			} else {
+				body, _ := ioutil.ReadAll(resp.Body)
+				fmt.Println("Layers: " + string(body))
+				resp.Body.Close()
+				fmt.Println("Would you like to fetch one of the layers?")
+				for scanner.Scan() {
+					if scanner.Text() == "y" || scanner.Text() == "Y" || scanner.Text() == "yes" || scanner.Text() == "Yes" {
+						fmt.Println("Which layer?")
+						for scanner.Scan() {
+							if scanner.Text() != "" {
+								layer := scanner.Text()
+								resp, err := http.Get("http://" + ip + "/layers/" + layer)
+								if err != nil {
+									fmt.Println(err)
+									break
+								} else {
+									body, err := ioutil.ReadAll(resp.Body)
+									if err == nil {
+										fmt.Println("Layer: " + string(body))
+										meta := files.AppendLayerDataToFile(layer, body)
+										network.AddLayer(layer, meta)
+									} else {
+										fmt.Println(err)
+									}
+									resp.Body.Close()
+									break
+								}
+							}
+							break
+						}
+					}
+					break
+				}
+			}
+		} else {
+			break
+		}
+		fmt.Println("Please enter the IP and port of a node you wish to query for torrents and layers")
+		fmt.Println("For example (don't include http://): localhost:7070")
 	}
 }
