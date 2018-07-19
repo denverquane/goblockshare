@@ -1,4 +1,4 @@
-package transaction
+package common
 
 import (
 	"crypto/ecdsa"
@@ -8,11 +8,21 @@ import (
 	"math/big"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 )
 
 type SignableTransaction struct {
 	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
 	Transaction TorrentTransaction
+	TransactionType string
+	R, S        *big.Int // signature of the transaction, should be separate from the actual "message" components
+	TxID        string
+}
+
+type JSONSignableTransaction struct {
+	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
+	Transaction json.RawMessage
+	TransactionType string
 	R, S        *big.Int // signature of the transaction, should be separate from the actual "message" components
 	TxID        string
 }
@@ -36,6 +46,7 @@ func (st SignableTransaction) GetHash(haveRSbeenSet bool) []byte {
 	if st.Transaction != nil {
 		h.Write(st.Transaction.GetRawBytes())
 	}
+	h.Write([]byte(st.TransactionType))
 
 
 	//Filters the cases where we just want the hash for non-signing purposes
@@ -54,7 +65,7 @@ func (st SignableTransaction) GetOrigin() OriginInfo {
 }
 
 func (st SignableTransaction) ToString() string {
-	return st.Origin.ToString() + "\n\"Transaction\":\n{\n" +
+	return st.Origin.ToString() + "\n\"TransactionType\": \"" + st.TransactionType + "\",\n\"Transaction\":\n{\n" +
 		string(st.Transaction.ToString()) + "\n},\n\"R\":" + st.R.String() + ",\n\"S\":" +
 		st.S.String() + ",\n\"TxID\":\"" + st.TxID +"\"\n}\n"
 }
@@ -91,37 +102,3 @@ func (st SignableTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
 	return ecdsa.Verify(&key, st.GetHash(true), r, s)
 }
 
-type OriginInfo struct {
-	PubKeyX *big.Int
-	PubKeyY *big.Int
-	Address Base64Address
-}
-
-func (oi OriginInfo) GetRawBytes() []byte {
-	return []byte(string(oi.PubKeyX.Bytes()) + string(oi.PubKeyY.Bytes()) + string(oi.Address))
-}
-
-func (oi OriginInfo) ToString() string {
-	return "\n{\n\"Origin\":\n{\n\"Address\":\"" + string(oi.Address) + "\",\n\"Pubkeyx\":" + oi.PubKeyX.String() +
-		",\n\"Pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
-}
-
-func AddressToOriginInfo(address PersonalAddress) OriginInfo {
-	return OriginInfo{address.PublicKey.X, address.PublicKey.Y, address.Address}
-}
-//
-//type RESTWrappedFullTransaction struct {
-//	Origin   OriginInfo
-//	Txref    []string
-//	Quantity float64
-//	Payload  string
-//	R        big.Int
-//	S        big.Int
-//	DestAddr string
-//}
-//
-//func (rest RESTWrappedFullTransaction) ConvertToFull() (FullTransaction, error) {
-//	var signed = SignableTransaction{rest.Origin, &rest.R, &rest.S}
-//	var full = MakeFull(signed, rest.Txref)
-//	return full, nil
-//}

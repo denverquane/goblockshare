@@ -7,12 +7,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"github.com/denverquane/GoBlockShare/common"
 )
 
 //MUST be smaller than the bitsize used for private key generation
@@ -26,7 +26,7 @@ const BLOCK_REWARD = 50
 type Block struct {
 	Index        int64
 	Timestamp    string
-	Transactions []transaction.SignableTransaction
+	Transactions []common.SignableTransaction
 	Hash         string
 	PrevHash     string
 	Difficulty   int
@@ -56,7 +56,7 @@ func InitialBlock() Block {
 	t := time.Now()
 	initBlock.Index = 0
 	initBlock.Timestamp = t.Format(time.RFC1123)
-	initBlock.Transactions = make([]transaction.SignableTransaction, 0)
+	initBlock.Transactions = make([]common.SignableTransaction, 0)
 
 	/****************************** Testing Tokens ************************************/
 
@@ -114,7 +114,7 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 }
 
 //TODO check the transaction with the block_rules whenever we add (prevent double-spending, for example)
-func (block *Block) AddTransaction(trans transaction.SignableTransaction) {
+func (block *Block) AddTransaction(trans common.SignableTransaction) {
 	fmt.Println("Adding transaction to mining block")
 	block.mux.Lock()
 	block.Transactions = append(block.Transactions, trans)
@@ -152,7 +152,7 @@ func isHashValid(hash string, difficulty int) bool {
 //GenerateBlock expects a "base" block to append transactions to, and thus "mining" a new block that contains these
 //transactions. The difficulty in mining this new block is proportional to the number of transactions being added,
 //and the more users that are registered to a channel results in a higher difficulty for mining transactions
-func GenerateInvalidBlock(oldBlock Block, transactions []transaction.SignableTransaction, payableAddress transaction.Base64Address) (Block, error) {
+func GenerateInvalidBlock(oldBlock Block, transactions []common.SignableTransaction, payableAddress common.Base64Address) (Block, error) {
 
 	var newBlock Block
 	t := time.Now()
@@ -160,7 +160,7 @@ func GenerateInvalidBlock(oldBlock Block, transactions []transaction.SignableTra
 	newBlock.Timestamp = t.Format(time.RFC1123)
 	newBlock.Difficulty = oldBlock.Difficulty
 	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Transactions = make([]transaction.SignableTransaction, 0)
+	newBlock.Transactions = make([]common.SignableTransaction, 0)
 	//newBlock.Transactions[0] = transaction.FullTransaction{makeBlockRewardTransaction(payableAddress), []string{}, ""}
 	//newBlock.Transactions[0].TxID = hex.EncodeToString(newBlock.Transactions[0].GetHash())
 
