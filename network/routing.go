@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"github.com/denverquane/GoBlockShare/blockchain"
 	//"github.com/denverquane/GoBlockShare/blockchain/transaction"
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/denverquane/GoBlockShare/files"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"os"
-	"crypto/sha256"
-	"encoding/hex"
+	"github.com/denverquane/GoBlockShare/blockchain/transaction"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -25,7 +26,7 @@ func MakeMuxRouter() http.Handler {
 	muxRouter.HandleFunc("/layers", handleGetLayers).Methods("GET")
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
 
-	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("GET")
+	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("POST")
 	//muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/addLayer/{layer}", handleReceiveLayer).Methods("POST")
 
@@ -86,22 +87,40 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var signedRequest transaction.SignableTransaction //should have received a transaction we can validate
+
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&signedRequest); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, err)
+		return
+	}
+	defer r.Body.Close()
+
+	if !signedRequest.Verify() {
+		respondWithJSON(w, r, http.StatusUnauthorized, "Transaction is not signed correctly")
+		fmt.Println("Transaction does not verify!")
+		return
+	}
+
+	//TODO check reputation and determine access here
+
 	for key, layer := range layers {
-			if key == layerId {
-				file, err := os.Open(layer.GetUrl())
-				defer file.Close()
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				data := make([]byte, layer.Size)
-
-				file.ReadAt(data, layer.Begin)
-
-				h := sha256.New()
-				h.Write(data)
-				io.WriteString(w, string(data))
+		if key == layerId {
+			file, err := os.Open(layer.GetUrl())
+			defer file.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
+			data := make([]byte, layer.Size)
+
+			file.ReadAt(data, layer.Begin)
+
+			h := sha256.New()
+			h.Write(data)
+			io.WriteString(w, string(data))
+		}
 	}
 
 	fmt.Println("GET layer: " + layerId)

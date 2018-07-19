@@ -17,7 +17,7 @@ type SignableTransaction struct {
 	TxID        string
 }
 
-func (st SignableTransaction) SetRS(r *big.Int, s *big.Int) SignableTransaction {
+func (st SignableTransaction) setRS(r *big.Int, s *big.Int) SignableTransaction {
 	st.R = r
 	st.S = s
 	return st
@@ -30,14 +30,22 @@ func (st SignableTransaction) GetRS() (*big.Int, *big.Int) {
 func (st SignableTransaction) GetHash(haveRSbeenSet bool) []byte {
 	h := sha256.New()
 	h.Write(st.Origin.GetRawBytes())
-	h.Write(st.Transaction.GetRawBytes())
+
+	//if the transaction is merely a request for a resource (like a layer), we only really need the signature, not any
+	//sort of nested transaction
+	if st.Transaction != nil {
+		h.Write(st.Transaction.GetRawBytes())
+	}
+
 
 	//Filters the cases where we just want the hash for non-signing purposes
 	//(if the transaction hasn't been signed, we shouldn't hash R and S as they don't matter)
-	if haveRSbeenSet {
+	if haveRSbeenSet{
 		h.Write(st.R.Bytes())
 		h.Write(st.S.Bytes())
 	}
+
+	//don't hash the TXid; the txid is just the hash of everything else anyways
 	return h.Sum(nil)
 }
 
@@ -46,11 +54,10 @@ func (st SignableTransaction) GetOrigin() OriginInfo {
 }
 
 func (st SignableTransaction) ToString() string {
-	return st.Origin.ToString() + "\"txref\":[],\n" +
-		string(st.Transaction.GetRawBytes()) + "\",\n\"r\":" + st.R.String() + ",\n\"s\":" +
-		st.S.String() + "\n}\n"
+	return st.Origin.ToString() + "\n\"Transaction\":\n{\n" +
+		string(st.Transaction.ToString()) + "\n},\n\"R\":" + st.R.String() + ",\n\"S\":" +
+		st.S.String() + ",\n\"TxID\":\"" + st.TxID +"\"\n}\n"
 }
-
 
 func (st SignableTransaction) SignAndSetTxID(priv *ecdsa.PrivateKey) SignableTransaction {
 	hashed := st.GetHash(false)
@@ -60,7 +67,7 @@ func (st SignableTransaction) SignAndSetTxID(priv *ecdsa.PrivateKey) SignableTra
 		log.Println("Error when signing transaction!")
 		return st
 	}
-	st = st.SetRS(r, s)
+	st = st.setRS(r, s)
 	st.TxID = hex.EncodeToString(st.GetHash(true))
 	return st
 }
@@ -95,8 +102,8 @@ func (oi OriginInfo) GetRawBytes() []byte {
 }
 
 func (oi OriginInfo) ToString() string {
-	return "\n{\n\"origin\":\n{\n\"address\":\"" + string(oi.Address) + "\",\n\"pubkeyx\":" + oi.PubKeyX.String() +
-		",\n\"pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
+	return "\n{\n\"Origin\":\n{\n\"Address\":\"" + string(oi.Address) + "\",\n\"Pubkeyx\":" + oi.PubKeyX.String() +
+		",\n\"Pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
 }
 
 func AddressToOriginInfo(address PersonalAddress) OriginInfo {

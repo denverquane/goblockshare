@@ -22,6 +22,19 @@ type PersonalAddress struct {
 	Address    Base64Address
 }
 
+func (pa PersonalAddress) GenerateNullTransaction() SignableTransaction {
+	origin := AddressToOriginInfo(pa)
+	trans := SignableTransaction{
+		Origin:origin,
+		Transaction:nil,
+		R:nil,
+		S:nil,
+		TxID:"",
+	}
+	trans = trans.SignAndSetTxID(&pa.PrivateKey)
+	return trans
+}
+
 func GenerateNewPersonalAddress() PersonalAddress {
 	priv, err := ecdsa.GenerateKey(AUTHENTICATION_CURVE, rand.Reader)
 

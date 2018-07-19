@@ -31,7 +31,6 @@ type TorrentFile struct {
 	LayerHashKeys []string //fine to expose publicly to say what layers the torrent has
 
 	layerHashMaps  map[string]LayerFileMetadata //don't expose; reveals entire torrent structure
-	duplicatesMaps map[string]int    //don't reveal; should only be used internally/locally
 	url	string
 }
 
@@ -84,7 +83,7 @@ func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (Torr
 	}
 
 	torr := TorrentFile{name, layerByteSize, 0, "", make([]string, 0),
-		make(map[string]LayerFileMetadata, 0), make(map[string]int), url}
+		make(map[string]LayerFileMetadata, 0), url}
 	readbytes := layerByteSize
 	total := sha256.New()
 	total.Write([]byte(name))
@@ -159,14 +158,6 @@ func (torr TorrentFile) Validate() (bool, error) {
 	return true, nil
 }
 
-func (file TorrentFile) GetDuplicatesTotal() int {
-	total := 0
-	for _, v := range file.duplicatesMaps {
-		total += v
-	}
-	return total
-}
-
 //appendNewSegment adds new raw data to the torrentfile by hashing it and storing it in a map. If the same hash has
 //been computed previously, then the counter is incremented for that particular entry (to allow for analyzing if there
 //are common layers of file, and thus save on storage/bandwidth)
@@ -175,11 +166,7 @@ func (file *TorrentFile) appendNewSegment(segData []byte, min int64, max int64) 
 	file.LayerHashKeys = append(file.LayerHashKeys, hexHashed) //record the hash in order
 
 	if _, ok := file.layerHashMaps[hexHashed]; ok { //we've generated this hash before
-		if _, okk := file.duplicatesMaps[hexHashed]; okk { //we've made the entry before
-			file.duplicatesMaps[hexHashed]++
-		} else {
-			file.duplicatesMaps[hexHashed] = 1 //this is the 2nd occurrence (counter starts at 1 for "1st duplicate")
-		}
+		fmt.Println("Duplicate hash")
 	} else {
 		file.layerHashMaps[hexHashed] = LayerFileMetadata{file.url, min, max}
 	}

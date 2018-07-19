@@ -18,12 +18,6 @@ func TestMakeTorrentFile(t *testing.T) {
 		return
 	}
 
-	for segmentSize := int64(2); segmentSize < 10; segmentSize++ {
-		torr, _ := MakeTorrentFileFromFile(segmentSize, "../README.md", "readme.md")
-		val := torr.GetDuplicatesTotal()
-		fmt.Println("Size " + string(segmentSize+int64('0')) + " duplicate segments: " + strconv.FormatInt(int64(val), 10))
-	}
-
 	fmt.Println(torr.Validate())
 }
 
