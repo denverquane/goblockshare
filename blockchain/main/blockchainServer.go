@@ -12,6 +12,7 @@ import (
 	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/common"
 	"encoding/json"
+	"strconv"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -52,6 +53,7 @@ func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/block/{index}", handleGetBlock).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 
 	return muxRouter
@@ -60,6 +62,32 @@ func makeMuxRouter() http.Handler {
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 
 	data, err := json.MarshalIndent(*globalBlockchain, "", " ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("GET chain")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	io.WriteString(w, string(data))
+}
+
+func handleGetBlock(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	index := vars["index"]
+	i, err := strconv.Atoi(index)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if i < 0 || i >= globalBlockchain.Len() {
+		http.Error(w, "Invalid index requested", http.StatusBadRequest)
+		return
+	}
+
+	data, err := json.MarshalIndent(globalBlockchain.Blocks[i], "", " ")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

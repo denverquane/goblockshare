@@ -84,6 +84,7 @@ func run() error {
 	}
 
 	myAddress = common.GenerateNewPersonalAddress()
+	myAddress2 := common.GenerateNewPersonalAddress()
 
 	if scanner.Err() != nil {
 		// handle error.
@@ -101,10 +102,11 @@ func run() error {
 			broadcastTransaction("http://localhost:" + blockchainPort + "/addTransaction", signed)
 			registerTorrent(file)
 
+			origin2 := common.AddressToOriginInfo(myAddress2)
 			trans2 := common.TorrentRepTrans{signed.TxID,
 				common.RepMessage{true, true, true}}
-			btt2 := common.SignableTransaction{origin, trans2, "TORRENT_REP", nil, nil, ""}
-			signed2 := btt2.SignAndSetTxID(&myAddress.PrivateKey)
+			btt2 := common.SignableTransaction{origin2, trans2, "TORRENT_REP", nil, nil, ""}
+			signed2 := btt2.SignAndSetTxID(&myAddress2.PrivateKey)
 			log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
 			broadcastTransaction("http://localhost:" + blockchainPort + "/addTransaction", signed2)
 		}
@@ -231,7 +233,6 @@ func makeMuxRouter() http.Handler {
 	muxRouter.HandleFunc("/layers", handleGetLayers).Methods("GET")
 
 	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("POST")
-	//muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/addLayer/{layer}", handleReceiveLayer).Methods("POST")
 
 	return muxRouter
