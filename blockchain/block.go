@@ -161,8 +161,6 @@ func GenerateInvalidBlock(oldBlock Block, transactions []common.SignableTransact
 	newBlock.Difficulty = oldBlock.Difficulty
 	newBlock.PrevHash = oldBlock.Hash
 	newBlock.Transactions = make([]common.SignableTransaction, 0)
-	//newBlock.Transactions[0] = transaction.FullTransaction{makeBlockRewardTransaction(payableAddress), []string{}, ""}
-	//newBlock.Transactions[0].TxID = hex.EncodeToString(newBlock.Transactions[0].GetHash())
 
 	for _, t := range transactions {
 		if !t.Verify() {

@@ -27,25 +27,42 @@ type torrFileSpecs struct {
 
 var myAddress common.PersonalAddress
 var blockchainPort string
+var myPort	string
+var torrentPath string
 
 var torrents []common.TorrentFile
 var layers map[string]common.LayerFileMetadata
 
 func main() {
-	err := godotenv.Load(".env")
-	blockchainPort = os.Getenv("BLOCKCHAIN_PORT")
+	err := godotenv.Load("global.env")
 	if err != nil {
-		log.Fatal(err)
+		err = godotenv.Load("local.env")
+		if err != nil {
+			err = godotenv.Load("torrentshare/local.env")
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Println("Using local env file")
+			}
+		} else {
+			log.Println("Using local env file")
+		}
+	} else {
+		log.Println("Using global env file")
+	}
+
+	blockchainPort = os.Getenv("BLOCKCHAIN_PORT")
+	myPort = os.Getenv("TORRENT_PORT")
+
+	if len(os.Args) > 1 {
+		torrentPath = os.Args[1]
 	}
 
 	log.Fatal(run())
 }
 
 func run() error {
-	var httpAddr string
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Please enter the port this app should use [Ex: 7070]:")
-	httpAddr = getStdin(scanner)
 
 	jobs := make(chan torrFileSpecs, 10)
 	results := make(chan common.TorrentFile, 10)
@@ -55,33 +72,30 @@ func run() error {
 	}
 	totalJobs := 0
 
-	fmt.Println("Would you like to generate a default torrent from README.md? [y/n]")
-	text := getStdin(scanner)
-	if text == "y" || text == "Y" || text == "yes" || text == "Yes" || text == "YES" {
-		jobs <- torrFileSpecs{"README.md", 1000, "readme.md"}
-		totalJobs++
-	}
+	jobs <- torrFileSpecs{torrentPath, 1000, torrentPath}
+	totalJobs++
 
-	for {
-		fmt.Println("Any other torrents to provide? [y/n]")
-		text = getStdin(scanner)
-		if text == "n" || text == "no" || text == "No" || text == "done" || text == "quit" {
-			break
-		}
-		fmt.Println("What is the location of your file? [Ex: test.txt, C:/Users/<...>/file.txt]:")
-		url := getStdin(scanner)
-		if url == "done" || url == "quit" {
-			break
-		}
-		fmt.Println("What to call this torrent? [Ex: test.txt]")
-		name := getStdin(scanner)
-		if name == "done" || name == "quit" {
-			break
-		}
-		jobs <- torrFileSpecs{url, 1000, name}
-		totalJobs++
-		fmt.Println("Added " + name + " to job queue")
-	}
+
+	//for {
+	//	fmt.Println("Any other torrents to provide? [y/n]")
+	//	text = getStdin(scanner)
+	//	if text == "n" || text == "no" || text == "No" || text == "done" || text == "quit" {
+	//		break
+	//	}
+	//	fmt.Println("What is the location of your file? [Ex: test.txt, C:/Users/<...>/file.txt]:")
+	//	url := getStdin(scanner)
+	//	if url == "done" || url == "quit" {
+	//		break
+	//	}
+	//	fmt.Println("What to call this torrent? [Ex: test.txt]")
+	//	name := getStdin(scanner)
+	//	if name == "done" || name == "quit" {
+	//		break
+	//	}
+	//	jobs <- torrFileSpecs{url, 1000, name}
+	//	totalJobs++
+	//	fmt.Println("Added " + name + " to job queue")
+	//}
 
 	myAddress = common.GenerateNewPersonalAddress()
 	myAddress2 := common.GenerateNewPersonalAddress()
@@ -112,20 +126,17 @@ func run() error {
 		}
 	}
 
-	log.Println("Listening on ", httpAddr)
-	if httpAddr == "8080" {
-		log.Println("(This is the same port used internally for running Docker builds - are you running within a container?)")
-	}
+	log.Println("Listening on ", myPort)
 
 	s := &http.Server{
-		Addr:           ":" + httpAddr,
+		Addr:           ":" + myPort,
 		Handler:        muxx,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	go listenForInput()
+	//go listenForInput()
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -229,6 +240,8 @@ func listenForInput() {
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
+	muxRouter.HandleFunc("/", handleIndexHelp).Methods("GET")
+
 	muxRouter.HandleFunc("/torrents", handleGetTorrents).Methods("GET")
 	muxRouter.HandleFunc("/layers", handleGetLayers).Methods("GET")
 
@@ -253,6 +266,15 @@ func addLayer(id string, metadata common.LayerFileMetadata) {
 		layers = make(map[string]common.LayerFileMetadata, 0)
 	}
 	layers[id] = metadata
+}
+
+func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "Please use the following endpoints:\n\nGET /torrents to see available torrents\n" +
+		"GET /layers to see available layers\nPOST /layers/<layerid> to POST a authentication transaction requesting the layer\n" +
+		"POST /addLayer/<layerid> to POST raw layer data to add to internal server records (under <layerid>)")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func handleGetLayer(w http.ResponseWriter, r *http.Request) {
@@ -395,7 +417,8 @@ func broadcastTransaction(url string, trans common.SignableTransaction) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
 	defer resp.Body.Close()
 

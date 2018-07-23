@@ -18,9 +18,21 @@ import (
 var globalBlockchain *blockchain.BlockChain
 
 func main() {
-	err := godotenv.Load(".env")
+	err := godotenv.Load("global.env")
 	if err != nil {
-		log.Fatal(err)
+		err = godotenv.Load("local.env")
+		if err != nil {
+			err = godotenv.Load("blockchain/local.env")
+			if err != nil {
+				log.Fatal(err)
+			} else {
+				log.Println("Using local env file")
+			}
+		} else {
+			log.Println("Using local env file")
+		}
+	} else {
+		log.Println("Using global env file")
 	}
 
 	temp := blockchain.MakeInitialChain()
@@ -52,11 +64,21 @@ func run() error {
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
+	muxRouter.HandleFunc("/", handleIndexHelp).Methods("GET")
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/block/{index}", handleGetBlock).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 
 	return muxRouter
+}
+
+func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "Please use the following endpoints:\n\nGET /blockchain to see the entire recorded blockchain\n" +
+		"GET /block/<index> to see a specific block of the chain\nPOST /addTransaction to POST a signed transaction " +
+		"onto the blockchain")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 }
 
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
