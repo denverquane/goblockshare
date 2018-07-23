@@ -1,4 +1,4 @@
-package transaction
+package common
 
 import (
 	"crypto/ecdsa"
@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"math/big"
 )
 
 type Base64Address string
@@ -22,17 +23,23 @@ type PersonalAddress struct {
 	Address    Base64Address
 }
 
-func (pa PersonalAddress) GenerateNullTransaction() SignableTransaction {
-	origin := AddressToOriginInfo(pa)
-	trans := SignableTransaction{
-		Origin:origin,
-		Transaction:nil,
-		R:nil,
-		S:nil,
-		TxID:"",
-	}
-	trans = trans.SignAndSetTxID(&pa.PrivateKey)
-	return trans
+type OriginInfo struct {
+	PubKeyX *big.Int
+	PubKeyY *big.Int
+	Address Base64Address
+}
+
+func (oi OriginInfo) GetRawBytes() []byte {
+	return []byte(string(oi.PubKeyX.Bytes()) + string(oi.PubKeyY.Bytes()) + string(oi.Address))
+}
+
+func (oi OriginInfo) ToString() string {
+	return "\n{\n\"Origin\":\n{\n\"Address\":\"" + string(oi.Address) + "\",\n\"Pubkeyx\":" + oi.PubKeyX.String() +
+		",\n\"Pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
+}
+
+func AddressToOriginInfo(address PersonalAddress) OriginInfo {
+	return OriginInfo{address.PublicKey.X, address.PublicKey.Y, address.Address}
 }
 
 func GenerateNewPersonalAddress() PersonalAddress {

@@ -1,11 +1,10 @@
-package transaction
+package common
 
 import (
-	"github.com/denverquane/GoBlockShare/files"
+
 )
 
 type TorrentTransaction interface {
-	GetType() string
 	GetRawBytes() []byte
 	ToString() string
 }
@@ -39,11 +38,7 @@ func boolToByte(v bool) byte {
 //This allows other users and nodes to discover what layers comprise what type of file or content, so that the individual
 //layers can be directly/"privately" requested from nodes (users don't request layers on the blockchain)
 type PublishTorrentTrans struct {
-	Torrent files.TorrentFile
-	Type 	string
-}
-func (tt PublishTorrentTrans) GetType() string {
-	return tt.Type
+	Torrent TorrentFile
 }
 func (tt PublishTorrentTrans) GetRawBytes() []byte {
 	return tt.Torrent.GetRawBytes()
@@ -59,11 +54,7 @@ var _ TorrentTransaction = PublishTorrentTrans{}
 //left feedback on the share, if that address actually received the layer, etc.
 type SharedLayerTrans struct {
 	SharedLayerHash []byte
-	Recipient		Base64Address
-	Type 			string
-}
-func (lt SharedLayerTrans) GetType() string {
-	return lt.Type
+	Recipient		string
 }
 func (lt SharedLayerTrans) GetRawBytes() []byte {
 	return []byte(string(lt.SharedLayerHash) + string(lt.Recipient))
@@ -81,10 +72,6 @@ type LayerRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
 	WasLayerReceived bool
 	WasLayerValid	bool
-	Type 		string
-}
-func (rt LayerRepTrans) GetType() string {
-	return rt.Type
 }
 func (rt LayerRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + string(boolToByte(rt.WasLayerReceived)) + string(boolToByte(rt.WasLayerValid)))
@@ -100,10 +87,6 @@ var _ TorrentTransaction = LayerRepTrans{}
 type TorrentRepTrans struct {
 	TxID		string //the original transaction when the layer was shared with "me"
 	RepMessage	RepMessage
-	Type 		string
-}
-func (rt TorrentRepTrans) GetType() string {
-	return rt.Type
 }
 func (rt TorrentRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + string(rt.RepMessage.toBytes()))

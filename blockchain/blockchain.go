@@ -2,8 +2,11 @@ package blockchain
 
 import (
 	"fmt"
-	"github.com/denverquane/GoBlockShare/blockchain/transaction"
-	"strconv"
+	"encoding/json"
+	"net/http"
+	"bytes"
+	"io/ioutil"
+	"github.com/denverquane/GoBlockShare/common"
 )
 
 type BlockChain struct {
@@ -30,7 +33,7 @@ func (chain BlockChain) ToString() string {
 	return str
 }
 
-func (chain BlockChain) GetTxById(txid string) transaction.SignableTransaction {
+func (chain BlockChain) GetTxById(txid string) common.SignableTransaction {
 	for _, block := range chain.Blocks {
 		for _, tx := range block.Transactions {
 			if tx.TxID == txid {
@@ -38,7 +41,7 @@ func (chain BlockChain) GetTxById(txid string) transaction.SignableTransaction {
 			}
 		}
 	}
-	return transaction.SignableTransaction{}
+	return common.SignableTransaction{}
 }
 
 //IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
@@ -64,13 +67,13 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) addTransaction(trans transaction.SignableTransaction, payableAddress transaction.Base64Address) (string, bool) {
+func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payableAddress common.Base64Address) (string, bool) {
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
 		fmt.Println("Added transaction to mining block")
 		return "Added transaction to currently mining block", true
 	} else {
-		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []transaction.SignableTransaction{trans}, payableAddress)
+		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []common.SignableTransaction{trans}, payableAddress)
 		if err != nil {
 			return err.Error(), false
 		}
@@ -98,14 +101,6 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 	chain.processingBlock = nil
 }
 
-func (chain *BlockChain) CreateAndAddTransaction(originAddr transaction.PersonalAddress,
-	trans transaction.TorrentTransaction) transaction.SignableTransaction {
-	origin := transaction.AddressToOriginInfo(originAddr)
-	btt := transaction.SignableTransaction{origin, trans, nil, nil, ""}
-	signed := btt.SignAndSetTxID(&originAddr.PrivateKey)
-	chain.addTransaction(signed, originAddr.Address)
-	return signed
-}
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
 //possible replacing chain of longer length than the other
@@ -153,50 +148,71 @@ func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
 }
 
 //GetAddressRep gets the reputation associated with a particular address by exploring the blockchain
-func (chain BlockChain) GetAddressRep(addr transaction.Base64Address) string {
-	validTorrents := 0
-	qualityTorrents := 0
-	accurateNameTorrents := 0
-	totalTorrents := 0
+//func (chain BlockChain) GetAddressRep(addr address.Base64Address) string {
+//	validTorrents := 0
+//	qualityTorrents := 0
+//	accurateNameTorrents := 0
+//	totalTorrents := 0
+//
+//	validLayers := 0
+//	totalLayers := 0
+//
+//	for _, block := range chain.Blocks {
+//		for _, tx := range block.Transactions {
+//			tType := tx.Transaction.GetType()
+//			if tType == "TORRENT_REP" {
+//				torrentRep := tx.Transaction.(torrenttransaction.TorrentRepTrans)
+//				txId := torrentRep.TxID
+//				if chain.GetTxById(txId).Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
+//					if torrentRep.RepMessage.AccurateName {
+//						accurateNameTorrents++
+//					}
+//					if torrentRep.RepMessage.HighQuality {
+//						qualityTorrents++
+//					}
+//					if torrentRep.RepMessage.WasValid {
+//						validTorrents++
+//					}
+//					totalTorrents++
+//				}
+//			} else if tType == "LAYER_REP" {
+//				layerRep := tx.Transaction.(torrenttransaction.LayerRepTrans)
+//				txId := layerRep.TxID
+//				if chain.GetTxById(txId).Origin.Address == addr {
+//					if layerRep.WasLayerValid {
+//						validLayers++
+//					}
+//					totalLayers++
+//				}
+//			}
+//		}
+//	}
+//	valid := (float64(validTorrents) / float64(totalTorrents)) * 100.0
+//	quality := (float64(qualityTorrents) / float64(totalTorrents)) * 100.0
+//	accurate := (float64(accurateNameTorrents) / float64(totalTorrents)) * 100.0
+//
+//	return "Had " + strconv.FormatFloat(valid, 'f', -1, 64) + " valid, " +
+//		strconv.FormatFloat(quality, 'f', -1, 64) + " quality, and " +
+//		strconv.FormatFloat(accurate, 'f', -1, 64) + " accurate, and a total of " + strconv.Itoa(totalTorrents)
+//}
 
-	validLayers := 0
-	totalLayers := 0
-
-	for _, block := range chain.Blocks {
-		for _, tx := range block.Transactions {
-			tType := tx.Transaction.GetType()
-			if tType == "TORRENT_REP" {
-				torrentRep := tx.Transaction.(transaction.TorrentRepTrans)
-				txId := torrentRep.TxID
-				if chain.GetTxById(txId).Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
-					if torrentRep.RepMessage.AccurateName {
-						accurateNameTorrents++
-					}
-					if torrentRep.RepMessage.HighQuality {
-						qualityTorrents++
-					}
-					if torrentRep.RepMessage.WasValid {
-						validTorrents++
-					}
-					totalTorrents++
-				}
-			} else if tType == "LAYER_REP" {
-				layerRep := tx.Transaction.(transaction.LayerRepTrans)
-				txId := layerRep.TxID
-				if chain.GetTxById(txId).Origin.Address == addr {
-					if layerRep.WasLayerValid {
-						validLayers++
-					}
-					totalLayers++
-				}
-			}
-		}
+func BroadcastChain(url string, chain BlockChain) {
+	data, err := json.MarshalIndent(chain, "", "  ")
+	//fmt.Println(string(data))
+	var bytee = []byte(string(data))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
+	req.Header.Set("X-Custom-Header", "myvalue")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Access-Control-Allow-Origin", "*")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
 	}
-	valid := (float64(validTorrents) / float64(totalTorrents)) * 100.0
-	quality := (float64(qualityTorrents) / float64(totalTorrents)) * 100.0
-	accurate := (float64(accurateNameTorrents) / float64(totalTorrents)) * 100.0
+	defer resp.Body.Close()
 
-	return "Had " + strconv.FormatFloat(valid, 'f', -1, 64) + " valid, " +
-		strconv.FormatFloat(quality, 'f', -1, 64) + " quality, and " +
-		strconv.FormatFloat(accurate, 'f', -1, 64) + " accurate, and a total of " + strconv.Itoa(totalTorrents)
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
 }
