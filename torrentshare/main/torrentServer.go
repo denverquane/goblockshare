@@ -32,7 +32,7 @@ var torrents []common.TorrentFile
 var layers map[string]common.LayerFileMetadata
 
 func main() {
-	err := godotenv.Load("common/.env")
+	err := godotenv.Load(".env")
 	blockchainPort = os.Getenv("BLOCKCHAIN_PORT")
 	if err != nil {
 		log.Fatal(err)

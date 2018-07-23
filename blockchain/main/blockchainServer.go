@@ -18,7 +18,7 @@ import (
 var globalBlockchain *blockchain.BlockChain
 
 func main() {
-	err := godotenv.Load("common/.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal(err)
 	}

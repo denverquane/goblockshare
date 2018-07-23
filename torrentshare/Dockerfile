@@ -9,6 +9,6 @@ FROM alpine:latest as runner
 # RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app .
-EXPOSE "5002"
-ENV PORT 5002
+EXPOSE "7000"
+ENV PORT 7000
 CMD ["./app"]  
