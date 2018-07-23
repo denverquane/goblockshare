@@ -41,7 +41,7 @@ func (chain BlockChain) GetTxById(txid string) common.SignableTransaction {
 			}
 		}
 	}
-	return common.SignableTransaction{}
+	return common.SignableTransaction{TxID:"ERROR"}
 }
 
 //IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
@@ -84,6 +84,21 @@ func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payabl
 		go chain.waitForProcessingSwap(c)
 		return "Added transaction!", true
 	}
+}
+
+//ProcessingReferencedTX checks to ensure that the blockchain isn't currently processing a transaction that is referred
+//to by another future transaction
+func (chain *BlockChain) ProcessingReferencedTX(txid string) bool {
+	if chain.IsProcessing() {
+		var b Block
+		b = *chain.processingBlock
+		for _, t := range b.Transactions {
+			if t.TxID == txid {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 //waitForProcessingSwap waits until a block has finished mining (asynchronously) before adding it to the sequence of

@@ -157,6 +157,10 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal([]byte(jsonMessage.Transaction), &mm); err != nil {
 			log.Fatal(err)
 		}
+		if globalBlockchain.ProcessingReferencedTX(mm.TxID) {
+			respondWithJSON(w, r, http.StatusBadRequest, "TX referenced is still being processed!")
+			return
+		}
 		decodedMessage.Transaction = mm
 		break
 	}

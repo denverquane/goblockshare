@@ -84,12 +84,12 @@ func InitialBlock() Block {
 
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
 	initBlock.Difficulty = 1
-	initBlock.cachedTransHash = ""
+	initBlock.cachedTransHash = "nil"
 
 	for i := 0; !isHashValid(initBlock.Hash, 3); i++ {
 		hexx := fmt.Sprintf("%x", i)
 		initBlock.Nonce = hexx
-		initBlock.Hash, initBlock.cachedTransHash = initBlock.GetHash(initBlock.cachedTransHash == "")
+		initBlock.Hash, initBlock.cachedTransHash = initBlock.GetHash(initBlock.cachedTransHash == "nil")
 	}
 
 	return initBlock
@@ -107,7 +107,7 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 		hexx := fmt.Sprintf("%x", i)
 		block.mux.Lock()
 		block.Nonce = hexx
-		block.Hash, block.cachedTransHash = block.GetHash(block.cachedTransHash == "")
+		block.Hash, block.cachedTransHash = block.GetHash(block.cachedTransHash == "nil")
 		block.mux.Unlock()
 	}
 	c <- true
