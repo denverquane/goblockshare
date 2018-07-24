@@ -7,8 +7,6 @@ import (
 	"io"
 	"time"
 	"log"
-	"github.com/joho/godotenv"
-	"os"
 	"github.com/denverquane/GoBlockShare/blockchain"
 	"github.com/denverquane/GoBlockShare/common"
 	"encoding/json"
@@ -17,23 +15,10 @@ import (
 
 var globalBlockchain *blockchain.BlockChain
 
+var env common.EnvVars
+
 func main() {
-	err := godotenv.Load("global.env")
-	if err != nil {
-		err = godotenv.Load("local.env")
-		if err != nil {
-			err = godotenv.Load("blockchain/local.env")
-			if err != nil {
-				log.Fatal(err)
-			} else {
-				log.Println("Using local env file")
-			}
-		} else {
-			log.Println("Using local env file")
-		}
-	} else {
-		log.Println("Using global env file")
-	}
+	env = common.LoadEnvFromFile("blockchain")
 
 	temp := blockchain.MakeInitialChain()
 	globalBlockchain = &temp
@@ -43,10 +28,9 @@ func main() {
 
 func run() error {
 	muxx := makeMuxRouter()
-	port := os.Getenv("BLOCKCHAIN_PORT")
-	log.Println("Starting blockchain server on port " + port)
+	log.Println("Starting blockchain server on port " + env.BlockchainPort)
 	s := &http.Server{
-		Addr:           ":" + port,
+		Addr:           ":" + env.BlockchainPort,
 		Handler:        muxx,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -124,10 +108,7 @@ func handleGetBlock(w http.ResponseWriter, r *http.Request) {
 
 
 func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
-	// vars := mux.Vars(r)
-
 	var jsonMessage common.JSONSignableTransaction
-	var decodedMessage common.SignableTransaction
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&jsonMessage); err != nil {
@@ -136,47 +117,27 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decodedMessage.Origin = jsonMessage.Origin
-	decodedMessage.TransactionType = jsonMessage.TransactionType
-	decodedMessage.TxID = jsonMessage.TxID
-	decodedMessage.R = jsonMessage.R
-	decodedMessage.S = jsonMessage.S
+	decoded := jsonMessage.ConvertToSignable()
 
-	defer r.Body.Close()
-
-	switch jsonMessage.TransactionType {
-	case "PUBLISH_TORRENT":
-		var mm common.PublishTorrentTrans
-		if err := json.Unmarshal([]byte(jsonMessage.Transaction), &mm); err != nil {
-			log.Fatal(err)
-		}
-		decodedMessage.Transaction = mm
-		break
-	case "TORRENT_REP":
-		var mm common.TorrentRepTrans
-		if err := json.Unmarshal([]byte(jsonMessage.Transaction), &mm); err != nil {
-			log.Fatal(err)
-		}
-		if globalBlockchain.ProcessingReferencedTX(mm.TxID) {
-			respondWithJSON(w, r, http.StatusBadRequest, "TX referenced is still being processed!")
+	if decoded.TransactionType == "TORRENT_REP" {
+		rep := decoded.Transaction.(common.TorrentRepTrans)
+		if globalBlockchain.ProcessingReferencedTX(rep.TxID) {
+			respondWithJSON(w, r, http.StatusBadRequest, "TX referenced in REP transaction is still being processed")
 			return
 		}
-		decodedMessage.Transaction = mm
-		break
 	}
 
-	if !decodedMessage.Verify() {
+	if !decoded.Verify() {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
 		return
 	}
 
-	message, success := globalBlockchain.AddTransaction(decodedMessage, jsonMessage.Origin.Address)
+	message, success := globalBlockchain.AddTransaction(decoded, jsonMessage.Origin.Address)
 	if !success {
 		respondWithJSON(w, r, http.StatusBadRequest, message)
 	} else {
 		respondWithJSON(w, r, http.StatusCreated, message)
 	}
-	// BroadcastToAllPeers([]string{"http://localhost:8050/" + vars["channel"] + "/chain"}, newChain)
 }
 
 func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload interface{}) {

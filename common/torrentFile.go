@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"encoding/binary"
 	"fmt"
+	"log"
 )
 
 type LayerFileMetadata struct {
@@ -63,6 +64,7 @@ func Int64ToByteArr(i int64) []byte {
 
 func (torr TorrentFile) GetRawBytes() []byte {
 	ret := make([]byte, 0)
+	ret = append(ret, []byte(torr.Name)...)
 	ret = append(ret, Int64ToByteArr(torr.LayerByteSize)...)
 
 	for _, v := range torr.LayerHashKeys {
@@ -188,8 +190,10 @@ func AppendLayerDataToFile(layerId string, data []byte) LayerFileMetadata {
 
 	f, err := os.OpenFile("layers.data", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		panic(err)
+		log.Println("Couldn't open layers file for writing new layer")
+		return LayerFileMetadata{}
 	}
+	defer f.Close()
 
 	info, _ := f.Stat()
 	offset := info.Size()
@@ -197,8 +201,6 @@ func AppendLayerDataToFile(layerId string, data []byte) LayerFileMetadata {
 	var keyData = []byte(layerId + ":")
 	offset += int64(len(keyData)) //how much we are actually offset before we write raw data
 	writeSize := len(data)
-
-	defer f.Close()
 
 	if _, err = f.WriteString(string(keyData) + string(data) + "\n"); err != nil {
 		panic(err)

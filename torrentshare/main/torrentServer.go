@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -25,34 +24,17 @@ type torrFileSpecs struct {
 	name          string
 }
 
+var env common.EnvVars
+
 var myAddress common.PersonalAddress
-var blockchainPort string
-var myPort	string
+var myAddress2 common.PersonalAddress
 var torrentPath string
 
 var torrents []common.TorrentFile
 var layers map[string]common.LayerFileMetadata
 
 func main() {
-	err := godotenv.Load("global.env")
-	if err != nil {
-		err = godotenv.Load("local.env")
-		if err != nil {
-			err = godotenv.Load("torrentshare/local.env")
-			if err != nil {
-				log.Fatal(err)
-			} else {
-				log.Println("Using local env file")
-			}
-		} else {
-			log.Println("Using local env file")
-		}
-	} else {
-		log.Println("Using global env file")
-	}
-
-	blockchainPort = os.Getenv("BLOCKCHAIN_PORT")
-	myPort = os.Getenv("TORRENT_PORT")
+	env = common.LoadEnvFromFile("torrentshare")
 
 	if len(os.Args) > 1 {
 		torrentPath = os.Args[1]
@@ -75,30 +57,8 @@ func run() error {
 	jobs <- torrFileSpecs{torrentPath, 1000, torrentPath}
 	totalJobs++
 
-
-	//for {
-	//	fmt.Println("Any other torrents to provide? [y/n]")
-	//	text = getStdin(scanner)
-	//	if text == "n" || text == "no" || text == "No" || text == "done" || text == "quit" {
-	//		break
-	//	}
-	//	fmt.Println("What is the location of your file? [Ex: test.txt, C:/Users/<...>/file.txt]:")
-	//	url := getStdin(scanner)
-	//	if url == "done" || url == "quit" {
-	//		break
-	//	}
-	//	fmt.Println("What to call this torrent? [Ex: test.txt]")
-	//	name := getStdin(scanner)
-	//	if name == "done" || name == "quit" {
-	//		break
-	//	}
-	//	jobs <- torrFileSpecs{url, 1000, name}
-	//	totalJobs++
-	//	fmt.Println("Added " + name + " to job queue")
-	//}
-
 	myAddress = common.GenerateNewPersonalAddress()
-	myAddress2 := common.GenerateNewPersonalAddress()
+	myAddress2 = common.GenerateNewPersonalAddress()
 
 	if scanner.Err() != nil {
 		// handle error.
@@ -113,30 +73,28 @@ func run() error {
 			btt := common.SignableTransaction{origin, trans, "PUBLISH_TORRENT", nil, nil, ""}
 			signed := btt.SignAndSetTxID(&myAddress.PrivateKey)
 			log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
-			broadcastTransaction("http://localhost:" + blockchainPort + "/addTransaction", signed)
+			broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed)
 			registerTorrent(file)
 
-			origin2 := common.AddressToOriginInfo(myAddress2)
-			trans2 := common.TorrentRepTrans{signed.TxID,
-				common.RepMessage{true, true, true}}
-			btt2 := common.SignableTransaction{origin2, trans2, "TORRENT_REP", nil, nil, ""}
-			signed2 := btt2.SignAndSetTxID(&myAddress2.PrivateKey)
-			log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
-			broadcastTransaction("http://localhost:" + blockchainPort + "/addTransaction", signed2)
+			//origin2 := common.AddressToOriginInfo(myAddress2)
+			//trans2 := common.TorrentRepTrans{signed.TxID,
+			//	common.RepMessage{true, true, true}}
+			//btt2 := common.SignableTransaction{origin2, trans2, "TORRENT_REP", nil, nil, ""}
+			//signed2 := btt2.SignAndSetTxID(&myAddress2.PrivateKey)
+			//log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
+			//broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed2)
 		}
 	}
 
-	log.Println("Listening on ", myPort)
+	log.Println("Listening on ", env.TorrentPort)
 
 	s := &http.Server{
-		Addr:           ":" + myPort,
+		Addr:           ":" + env.TorrentPort,
 		Handler:        muxx,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-
-	//go listenForInput()
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -408,9 +366,8 @@ func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload i
 }
 
 func broadcastTransaction(url string, trans common.SignableTransaction) {
-	data, err := json.MarshalIndent(trans, "", "  ")
-	var bytee = []byte(string(data))
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
+	data, err := json.Marshal(trans)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	req.Header.Set("X-Custom-Header", "myvalue")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Access-Control-Allow-Origin", "*")

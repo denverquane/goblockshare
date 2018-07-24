@@ -27,6 +27,34 @@ type JSONSignableTransaction struct {
 	TxID        string
 }
 
+func (js JSONSignableTransaction) ConvertToSignable() SignableTransaction {
+	copied := SignableTransaction{}
+
+	copied.Origin = js.Origin
+	copied.TransactionType = js.TransactionType
+	copied.TxID = js.TxID
+	copied.R = js.R
+	copied.S = js.S
+
+	switch js.TransactionType {
+	case "PUBLISH_TORRENT":
+		var mm PublishTorrentTrans
+		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
+			log.Fatal(err)
+		}
+		copied.Transaction = mm
+		break
+	case "TORRENT_REP":
+		var mm TorrentRepTrans
+		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
+			log.Fatal(err)
+		}
+		copied.Transaction = mm
+		break
+	}
+	return copied
+}
+
 func (st SignableTransaction) setRS(r *big.Int, s *big.Int) SignableTransaction {
 	st.R = r
 	st.S = s
@@ -37,26 +65,12 @@ func (st SignableTransaction) GetRS() (*big.Int, *big.Int) {
 	return st.R, st.S
 }
 
-func (st SignableTransaction) GetHash(haveRSbeenSet bool) []byte {
+func (st SignableTransaction) GetHash() []byte {
 	h := sha256.New()
-	h.Write(st.Origin.GetRawBytes())
 
-	//if the transaction is merely a request for a resource (like a layer), we only really need the signature, not any
-	//sort of nested transaction
-	if st.Transaction != nil {
-		h.Write(st.Transaction.GetRawBytes())
-	}
-	h.Write([]byte(st.TransactionType))
+	st.TxID = "" //don't hash the TXid; the txid is just the hash of everything else anyways
+	h.Write([]byte(st.ToString()))
 
-
-	//Filters the cases where we just want the hash for non-signing purposes
-	//(if the transaction hasn't been signed, we shouldn't hash R and S as they don't matter)
-	if haveRSbeenSet{
-		h.Write(st.R.Bytes())
-		h.Write(st.S.Bytes())
-	}
-
-	//don't hash the TXid; the txid is just the hash of everything else anyways
 	return h.Sum(nil)
 }
 
@@ -65,13 +79,12 @@ func (st SignableTransaction) GetOrigin() OriginInfo {
 }
 
 func (st SignableTransaction) ToString() string {
-	return st.Origin.ToString() + "\n\"TransactionType\": \"" + st.TransactionType + "\",\n\"Transaction\":\n{\n" +
-		string(st.Transaction.ToString()) + "\n},\n\"R\":" + st.R.String() + ",\n\"S\":" +
-		st.S.String() + ",\n\"TxID\":\"" + st.TxID +"\"\n}\n"
+	data, _ := json.Marshal(st)
+	return hex.EncodeToString(data)
 }
 
 func (st SignableTransaction) SignAndSetTxID(priv *ecdsa.PrivateKey) SignableTransaction {
-	hashed := st.GetHash(false)
+	hashed := st.GetHash()
 	r, s, err := ecdsa.Sign(rand.Reader, priv, hashed)
 
 	if err != nil {
@@ -79,11 +92,17 @@ func (st SignableTransaction) SignAndSetTxID(priv *ecdsa.PrivateKey) SignableTra
 		return st
 	}
 	st = st.setRS(r, s)
-	st.TxID = hex.EncodeToString(st.GetHash(true))
+	st.TxID = hex.EncodeToString(st.GetHash())
 	return st
 }
 
 func (st SignableTransaction) Verify() bool {
+	id := hex.EncodeToString(st.GetHash())
+	if id != st.TxID {
+		fmt.Println("Transaction doesn't hash to it's ID!")
+		return false
+	}
+
 	origin := st.GetOrigin()
 	key := ecdsa.PublicKey{AUTHENTICATION_CURVE, origin.PubKeyX, origin.PubKeyY}
 
@@ -99,6 +118,6 @@ func (st SignableTransaction) Verify() bool {
 
 func (st SignableTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
 	r, s := st.GetRS()
-	return ecdsa.Verify(&key, st.GetHash(true), r, s)
+	return ecdsa.Verify(&key, st.GetHash(), r, s)
 }
 

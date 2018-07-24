@@ -131,7 +131,7 @@ func (block Block) GetHash(rehashTransactions bool) (string, string) {
 		fmt.Println("recalculating trans hash")
 
 		for _, v := range block.Transactions {
-			trans += string(v.GetHash(true))
+			trans += string(v.GetHash())
 		}
 	} else {
 		trans = block.cachedTransHash
