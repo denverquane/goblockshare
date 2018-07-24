@@ -80,7 +80,7 @@ func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payabl
 		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
 		fmt.Println("Mining a new block")
-		go chain.processingBlock.hashUntilValid(5, c)
+		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c)
 		go chain.waitForProcessingSwap(c)
 		return "Added transaction!", true
 	}

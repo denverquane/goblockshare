@@ -107,29 +107,26 @@ func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (Torr
 	return torr, nil
 }
 
-//func MakeTorrentFromBytes(segByteSize int64, data []byte, name string) (TorrentFile, error) {
-//	if segByteSize > int64(len(data)) {
-//		return TorrentFile{}, errors.New("Segment too long")
-//	}
-//
-//	torr := TorrentFile{name, segByteSize, 0,"", make([]string, 0), make(map[string][]byte, 0), make(map[string]int),}
-//
-//	var offset int64
-//	total := sha256.New()
-//	total.Write([]byte(name))
-//	//TODO write segbytesize (dont allow torrents to change segmentation size)
-//	for offset = 0; offset+segByteSize < int64(len(data)); {
-//		segment := data[offset : offset+segByteSize]
-//
-//		offset += segByteSize
-//		torr.appendNewSegment(segment)
-//		total.Write(segment)
-//	}
-//	torr.appendNewSegment(data[offset:])
-//	total.Write(data[offset:])
-//	torr.TotalHash = hex.EncodeToString(total.Sum(nil))
-//	return torr, nil
-//}
+func MakeTorrentFromBytes(segByteSize int64, data []byte, name string) (TorrentFile, error) {
+
+	torr := TorrentFile{name, segByteSize, 0,"", make([]string, 0),
+	make(map[string]LayerFileMetadata, 0), ""}
+
+	var offset int64
+	total := sha256.New()
+	total.Write([]byte(name))
+	//TODO write segbytesize (dont allow torrents to change segmentation size)
+	for offset = 0; offset+segByteSize < int64(len(data)); {
+		segment := data[offset : offset+segByteSize]
+		torr.appendNewSegment(segment, offset, segByteSize)
+		total.Write(segment)
+		offset += segByteSize
+	}
+	torr.appendNewSegment(data[offset:], offset, int64(len(data))-offset)
+	total.Write(data[offset:])
+	torr.TotalHash = hex.EncodeToString(total.Sum(nil))
+	return torr, nil
+}
 
 func (torr1 TorrentFile) Equals(torr2 TorrentFile) bool {
 	h1 := torr1.GetRawBytes()
@@ -160,9 +157,7 @@ func (torr TorrentFile) Validate() (bool, error) {
 	return true, nil
 }
 
-//appendNewSegment adds new raw data to the torrentfile by hashing it and storing it in a map. If the same hash has
-//been computed previously, then the counter is incremented for that particular entry (to allow for analyzing if there
-//are common layers of file, and thus save on storage/bandwidth)
+//appendNewSegment adds new raw data to the torrentfile by hashing it and storing it in a map.
 func (file *TorrentFile) appendNewSegment(segData []byte, min int64, max int64) {
 	hexHashed := hex.EncodeToString(hashSegment(segData))      //hash the data
 	file.LayerHashKeys = append(file.LayerHashKeys, hexHashed) //record the hash in order

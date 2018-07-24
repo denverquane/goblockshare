@@ -260,6 +260,7 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO check reputation and determine access here
+	//TODO add rules of some sort to filter users (maybe I have more stringent rules than other nodes; easily define rules)
 
 	for key, layer := range layers {
 		if key == layerId {

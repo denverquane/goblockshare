@@ -17,9 +17,9 @@ type EnvVars struct {
 }
 
 func LoadEnvFromFile(topDir string) EnvVars {
-	err := godotenv.Load("local.env")
+	err := godotenv.Load(".env")
 	if err != nil {
-		err = godotenv.Load(topDir + "/local.env")
+		err = godotenv.Load(topDir + "/.env")
 		if err != nil {
 			log.Println("Can't load env file; checking system env vars")
 		} else {

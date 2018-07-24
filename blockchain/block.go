@@ -15,11 +15,6 @@ import (
 	"github.com/denverquane/GoBlockShare/common"
 )
 
-//MUST be smaller than the bitsize used for private key generation
-const RSA_BITSIZE = 2048
-
-const BLOCK_REWARD = 50
-
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
 //overall state of the chain, and successive blocks of the chain. For example, a user leaving a comment on a channel
 //should be reflected in a new (immutable) block that other users would not be able to edit or remove; only "tack onto"
@@ -83,7 +78,7 @@ func InitialBlock() Block {
 	/**********************************************************************************/
 
 	initBlock.Hash = t.String() //placeholder until we calculate the actual hash
-	initBlock.Difficulty = 1
+	initBlock.Difficulty = 3
 	initBlock.cachedTransHash = "nil"
 
 	for i := 0; !isHashValid(initBlock.Hash, 3); i++ {
@@ -169,7 +164,6 @@ func GenerateInvalidBlock(oldBlock Block, transactions []common.SignableTransact
 			fmt.Println("Retaining old block")
 			return oldBlock, errors.New("Invalid transaction supplied")
 		}
-
 		newBlock.Transactions = append(newBlock.Transactions, t)
 	}
 
