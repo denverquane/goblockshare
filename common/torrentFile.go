@@ -70,6 +70,8 @@ func (torr TorrentFile) GetRawBytes() []byte {
 	for _, v := range torr.LayerHashKeys {
 		ret = append(ret, []byte(v)...)             //write the hashed key
 
+		//DON'T write the fileurl
+
 		ret = append(ret, Int64ToByteArr(torr.layerHashMaps[v].Begin)...)
 
 		ret = append(ret, Int64ToByteArr(torr.layerHashMaps[v].Size)...)
@@ -107,20 +109,20 @@ func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (Torr
 	return torr, nil
 }
 
-func MakeTorrentFromBytes(segByteSize int64, data []byte, name string) (TorrentFile, error) {
+func MakeTorrentFromBytes(layerByteSize int64, data []byte, name string) (TorrentFile, error) {
 
-	torr := TorrentFile{name, segByteSize, 0,"", make([]string, 0),
+	torr := TorrentFile{name, layerByteSize, 0,"", make([]string, 0),
 	make(map[string]LayerFileMetadata, 0), ""}
 
 	var offset int64
 	total := sha256.New()
 	total.Write([]byte(name))
-	//TODO write segbytesize (dont allow torrents to change segmentation size)
-	for offset = 0; offset+segByteSize < int64(len(data)); {
-		segment := data[offset : offset+segByteSize]
-		torr.appendNewSegment(segment, offset, segByteSize)
+	total.Write(Int64ToByteArr(layerByteSize))
+	for offset = 0; offset+layerByteSize < int64(len(data)); {
+		segment := data[offset : offset+layerByteSize]
+		torr.appendNewSegment(segment, offset, layerByteSize)
 		total.Write(segment)
-		offset += segByteSize
+		offset += layerByteSize
 	}
 	torr.appendNewSegment(data[offset:], offset, int64(len(data))-offset)
 	total.Write(data[offset:])
