@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"time"
 	"github.com/denverquane/GoBlockShare/common"
+	"sync"
+	"strings"
 )
 
 type torrFileSpecs struct {
@@ -41,6 +43,55 @@ func main() {
 	}
 
 	log.Fatal(run())
+	//total := time.Duration(0)
+	//for i := 0; i < 100; i++ {
+	//	lock := sync.Mutex{}
+	//	now := time.Now()
+	//	done := false
+	//
+	//	go addressWorker(lock, &done, "tesg", 'a')
+	//	go addressWorker(lock, &done, "tesg", 'b')
+	//	go addressWorker(lock, &done, "tesg", 'c')
+	//	go addressWorker(lock, &done, "tesg", 'd')
+	//
+	//	for {
+	//		lock.Lock()
+	//		isDone := done
+	//		lock.Unlock()
+	//
+	//		if isDone {
+	//			break
+	//		}
+	//	}
+	//
+	//	then := time.Now()
+	//	diff := then.Sub(now)
+	//	total += diff
+	//}
+	//
+	//fmt.Println((total / 100).String())
+}
+
+func addressWorker(mutex sync.Mutex, done *bool, prefix string, id byte) {
+	var addr string
+	for {
+		mutex.Lock()
+		isDone := *done
+		mutex.Unlock()
+		if isDone {
+			return
+		}
+
+		addr = string(common.GenerateNewPersonalAddress().Address)
+		if strings.Contains(addr, prefix) {
+			break
+		}
+	}
+	mutex.Lock()
+	*done = true
+	mutex.Unlock()
+	fmt.Println("Found by " + string(id) + " : " + addr)
+	return
 }
 
 func run() error {
@@ -70,7 +121,7 @@ func run() error {
 		if file.Name != "" {
 			trans := common.PublishTorrentTrans{file}
 			origin := common.AddressToOriginInfo(myAddress)
-			btt := common.SignableTransaction{origin, trans, "PUBLISH_TORRENT", nil, nil, ""}
+			btt := common.SignableTransaction{origin, trans, common.PUBLISH_TORRENT, nil, nil, ""}
 			signed := btt.SignAndSetTxID(&myAddress.PrivateKey)
 			log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
 			broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed)
@@ -210,15 +261,15 @@ func listenForFeedback() {
 	if which == "T" || which == "t" {
 		fmt.Println("What's the torrent TXID?")
 		id = getStdin(scanner)
-		trans := common.TorrentRepTrans{id, []byte(hash),
+		trans := common.TorrentRepTrans{id, hash,
 			common.RepMessage{true, true, true}}
-		btt = common.SignableTransaction{origin, trans, "TORRENT_REP", nil, nil, ""}
+		btt = common.SignableTransaction{origin, trans, common.TORRENT_REP, nil, nil, ""}
 	} else {
 		fmt.Println("What's the layer TXID?")
 		id = getStdin(scanner)
-		trans := common.LayerRepTrans{id, []byte(hash),
+		trans := common.LayerRepTrans{id, hash,
 			true, true}
-		btt = common.SignableTransaction{origin, trans, "LAYER_REP", nil, nil, ""}
+		btt = common.SignableTransaction{origin, trans, common.LAYER_REP, nil, nil, ""}
 	}
 	fmt.Println("And the hash?")
 	hash = getStdin(scanner)

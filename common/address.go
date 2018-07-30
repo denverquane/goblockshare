@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 	"math/big"
+	"log"
 )
 
 type Base64Address string
@@ -47,14 +48,14 @@ func GenerateNewPersonalAddress() PersonalAddress {
 
 	if err != nil {
 
-		fmt.Errorf("error: %s", err)
+		log.Fatal(fmt.Errorf("error: %s", err))
 
 		return PersonalAddress{}
 
 	}
 
 	if !AUTHENTICATION_CURVE.IsOnCurve(priv.PublicKey.X, priv.PublicKey.Y) {
-		fmt.Errorf("public key invalid: %s", err)
+		log.Fatal(fmt.Errorf("public key invalid: %s", err))
 	}
 	address := HashPublicToB64Address(priv.PublicKey)
 
@@ -78,7 +79,7 @@ func GenerateNewPersonalAddress() PersonalAddress {
 	//fmt.Println(string(pubBytes))
 	/**************************************************************************************************/
 
-	fmt.Println("New Key Pair created")
+	//fmt.Println("New Key Pair created")
 	return PersonalAddress{*priv, priv.PublicKey, HashPublicToB64Address(priv.PublicKey)}
 }
 

@@ -23,6 +23,8 @@ func main() {
 	temp := blockchain.MakeInitialChain()
 	globalBlockchain = &temp
 
+	globalBlockchain.AddMockTransactions()
+
 	log.Fatal(run())
 }
 
@@ -57,7 +59,7 @@ func makeMuxRouter() http.Handler {
 	return muxRouter
 }
 
-func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
+func handleIndexHelp(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, "Please use the following endpoints:\n\nGET /blockchain to see the entire recorded blockchain\n" +
 		"GET /block/<index> to see a specific block of the chain\nPOST /addTransaction to POST a signed transaction " +
 		"onto the blockchain")
@@ -143,18 +145,18 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//TODO reject layer trans?
+	//TODO reject layer trans if being processed?
 
 	if !decoded.Verify() {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")
 		return
 	}
 
-	message, success := globalBlockchain.AddTransaction(decoded, jsonMessage.Origin.Address)
+	success, err := globalBlockchain.AddTransaction(decoded, jsonMessage.Origin.Address)
 	if !success {
-		respondWithJSON(w, r, http.StatusBadRequest, message)
+		respondWithJSON(w, r, http.StatusBadRequest, err.Error())
 	} else {
-		respondWithJSON(w, r, http.StatusCreated, message)
+		respondWithJSON(w, r, http.StatusCreated, "Added transaction!")
 	}
 }
 

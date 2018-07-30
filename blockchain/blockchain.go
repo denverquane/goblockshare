@@ -7,12 +7,13 @@ import (
 	"github.com/denverquane/GoBlockShare/common"
 	"io/ioutil"
 	"net/http"
-)
+		"github.com/pkg/errors"
+	)
 
 type BlockChain struct {
 	Blocks          []Block
 	processingBlock *Block
-	txMap			map[string]common.SignableTransaction
+	txMap           map[string]common.SignableTransaction
 }
 
 //IsProcessing checks the field for the block being processed, and if it is nil, indicates that the blocks for the
@@ -73,23 +74,63 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payableAddress common.Base64Address) (string, bool) {
+func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payableAddress common.Base64Address) (bool, error) {
+	valid, err := chain.validateNewTransaction(trans)
+	if !valid {
+		return false, err
+	}
+
 	if chain.processingBlock != nil { //currently processing a block
 		chain.processingBlock.AddTransaction(trans)
 		fmt.Println("Added transaction to mining block")
-		return "Added transaction to currently mining block", true
+		return true, nil
 	} else {
 		invalidBlock, err := GenerateInvalidBlock(chain.GetNewestBlock(), []common.SignableTransaction{trans}, payableAddress)
 		if err != nil {
-			return err.Error(), false
+			return false, err
 		}
 		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
 		fmt.Println("Mining a new block")
 		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c)
 		go chain.waitForProcessingSwap(c)
-		return "Added transaction!", true
+		return true, nil
 	}
+}
+
+func (chain BlockChain) validateNewTransaction(trans common.SignableTransaction) (bool, error) {
+	switch trans.TransactionType {
+	case common.TORRENT_REP:
+		rep := trans.Transaction.(common.TorrentRepTrans)
+		referenced := chain.GetTxById(rep.TxID)
+		if referenced.TxID == "ERROR" {
+			return false, errors.New("Transaction references ID that is not found on the chain")
+		}
+		if referenced.TransactionType != common.PUBLISH_TORRENT {
+			return false, errors.New("Torrent rep transaction doesn't refer to a torrent publication transaction")
+		}
+		if referenced.Transaction.(common.PublishTorrentTrans).Torrent.TotalHash != rep.TorrentHash {
+			return false, errors.New("Torrent rep has a hash that doesn't match the original torrent publishing")
+		}
+		break
+	case common.LAYER_REP:
+		rep := trans.Transaction.(common.LayerRepTrans)
+		referenced := chain.GetTxById(rep.TxID)
+		if referenced.TxID == "ERROR" {
+			return false, errors.New("Transaction references ID that is not found on the chain")
+		}
+		if referenced.TransactionType != common.SHARED_LAYER {
+			return false, errors.New("Layer rep does not refer to a layer share transaction")
+		}
+		if referenced.Transaction.(common.SharedLayerTrans).SharedLayerHash != rep.LayerHash {
+			return false, errors.New("Layer rep has a hash that doesn't match the original shared hash")
+		}
+		if common.Base64Address(referenced.Transaction.(common.SharedLayerTrans).Recipient) != trans.Origin.Address {
+			return false, errors.New("Layer was not shared with the address currently providing feedback")
+		}
+		break
+	}
+	return true, nil
 }
 
 //ProcessingReferencedTX checks to ensure that the blockchain isn't currently processing a transaction that is referred
@@ -177,16 +218,17 @@ func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.Reputati
 	for _, block := range chain.Blocks {
 		for _, tx := range block.Transactions {
 			tType := tx.TransactionType
-			if tType == "TORRENT_REP" {
+			if tType == common.TORRENT_REP {
 				torrentRep := tx.Transaction.(common.TorrentRepTrans)
-				var summary common.TorrentRep
-				if val, ok := totalSummary.AllTorrentRep[string(torrentRep.TorrentHash)]; ok {
-					summary = val
-				} else {
-					summary = common.TorrentRep{0,0,0}
-				}
 				referencedTXID := torrentRep.TxID
 				if chain.GetTxById(referencedTXID).Origin.Address == addr {
+					var summary common.TorrentRep
+					if val, ok := totalSummary.TorrentRep[torrentRep.TorrentHash]; ok {
+						summary = val
+					} else {
+						summary = common.TorrentRep{0, 0, 0}
+					}
+
 					if torrentRep.RepMessage.AccurateName {
 						summary.AccurateReports++
 					}
@@ -196,39 +238,43 @@ func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.Reputati
 					if torrentRep.RepMessage.WasValid {
 						summary.ValidReports++
 					}
+					totalSummary.TorrentRep[torrentRep.TorrentHash] = summary
 				}
-				totalSummary.AllTorrentRep[string(torrentRep.TorrentHash)] = summary
-			} else if tType == "LAYER_REP" {
+
+			} else if tType == common.LAYER_REP {
 				layerRep := tx.Transaction.(common.LayerRepTrans)
-				var summary common.LayerRep
-				if val, ok := totalSummary.AllLayerRep[string(layerRep.LayerHash)]; ok {
-					summary = val
-				} else {
-					summary = common.LayerRep{0, 0, 0}
-				}
 				referencedTXID := layerRep.TxID
 				tx := chain.GetTxById(referencedTXID)
 				if tx.Origin.Address == addr {
+					var summary common.LayerRep
+					if val, ok := totalSummary.LayerRep[layerRep.LayerHash]; ok {
+						summary = val
+					} else {
+						summary = common.LayerRep{0, 0, 0}
+					}
+
 					if layerRep.WasLayerValid {
 						summary.ValidReports++
 					}
 					if !layerRep.WasLayerReceived {
 						summary.NotReceived++
 					}
+					totalSummary.LayerRep[layerRep.LayerHash] = summary
 				}
-				totalSummary.AllLayerRep[string(layerRep.LayerHash)] = summary
-			} else if tType == "SHARED_LAYER"{
-				sharedLayer := tx.Transaction.(common.SharedLayerTrans)
-				var summary common.LayerRep
-				if val, ok := totalSummary.AllLayerRep[string(sharedLayer.SharedLayerHash)]; ok {
-					summary = val
-				} else {
-					summary = common.LayerRep{0, 0, 0}
-				}
+
+			} else if tType == common.SHARED_LAYER {
 				if tx.Origin.Address == addr {
+					sharedLayer := tx.Transaction.(common.SharedLayerTrans)
+					var summary common.LayerRep
+					if val, ok := totalSummary.LayerRep[sharedLayer.SharedLayerHash]; ok {
+						summary = val
+					} else {
+						summary = common.LayerRep{0, 0, 0}
+					}
+
 					summary.SharedQuantity++
+					totalSummary.LayerRep[sharedLayer.SharedLayerHash] = summary
 				}
-				totalSummary.AllLayerRep[string(sharedLayer.SharedLayerHash)] = summary
 			}
 		}
 	}

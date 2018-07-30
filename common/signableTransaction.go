@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 )
 
+
+
 type SignableTransaction struct {
 	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
 	Transaction TorrentTransaction
@@ -37,29 +39,36 @@ func (js JSONSignableTransaction) ConvertToSignable() SignableTransaction {
 	copied.S = js.S
 
 	switch js.TransactionType {
-	case "PUBLISH_TORRENT":
+	case PUBLISH_TORRENT:
 		var mm PublishTorrentTrans
 		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
 			log.Fatal(err)
 		}
 		copied.Transaction = mm
 		break
-	case "TORRENT_REP":
+	case TORRENT_REP:
 		var mm TorrentRepTrans
 		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
 			log.Fatal(err)
 		}
 		copied.Transaction = mm
 		break
-	case "SHARED_LAYER":
+	case SHARED_LAYER:
 		var mm SharedLayerTrans
 		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
 			log.Fatal(err)
 		}
 		copied.Transaction = mm
 		break
-	case "LAYER_REP":
+	case LAYER_REP:
 		var mm LayerRepTrans
+		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
+			log.Fatal(err)
+		}
+		copied.Transaction = mm
+		break
+	case SET_ALIAS:
+		var mm SetAliasTrans
 		if err := json.Unmarshal([]byte(js.Transaction), &mm); err != nil {
 			log.Fatal(err)
 		}

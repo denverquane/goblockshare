@@ -18,8 +18,8 @@ type LayerRep struct {
 
 type ReputationSummary struct {
 	//Reputation of all torrents, indexed by their hashes
-	AllTorrentRep	 map[string]TorrentRep
+	TorrentRep	 map[string]TorrentRep
 
 	//Reputation of all layers, indexed by hash
-	AllLayerRep		 map[string]LayerRep
+	LayerRep		 map[string]LayerRep
 }
