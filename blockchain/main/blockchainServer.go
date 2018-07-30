@@ -52,6 +52,7 @@ func makeMuxRouter() http.Handler {
 	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
 	muxRouter.HandleFunc("/block/{index}", handleGetBlock).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
+	muxRouter.HandleFunc("/reputation/{address}", handleGetReputation).Methods("GET")
 
 	return muxRouter
 }
@@ -65,6 +66,21 @@ func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 }
 
+func handleGetReputation(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	address := vars["address"]
+	rep := globalBlockchain.GetAddressRep(common.Base64Address(address))
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	resp, err := json.Marshal(rep)
+	if err != nil {
+		fmt.Println(err)
+	}
+	io.WriteString(w, string(resp))
+
+}
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 
 	data, err := json.MarshalIndent(*globalBlockchain, "", " ")
@@ -119,13 +135,15 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 
 	decoded := jsonMessage.ConvertToSignable()
 
-	if decoded.TransactionType == "TORRENT_REP" {
+	if decoded.TransactionType == "TORRENT_REP"{
 		rep := decoded.Transaction.(common.TorrentRepTrans)
 		if globalBlockchain.ProcessingReferencedTX(rep.TxID) {
 			respondWithJSON(w, r, http.StatusBadRequest, "TX referenced in REP transaction is still being processed")
 			return
 		}
 	}
+
+	//TODO reject layer trans?
 
 	if !decoded.Verify() {
 		respondWithJSON(w, r, http.StatusBadRequest, "Transaction provided is invalid")

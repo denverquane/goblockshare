@@ -86,6 +86,8 @@ func run() error {
 		}
 	}
 
+	go listenForFeedback()
+
 	log.Println("Listening on ", env.TorrentPort)
 
 	s := &http.Server{
@@ -193,6 +195,37 @@ func listenForInput() {
 	//	break
 	//}
 	log.Println("Done receiving input, will only respond to http endpoints now")
+}
+
+func listenForFeedback() {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Please enter T or L for torrent or layer feedback")
+
+	which := getStdin(scanner)
+
+	var id string
+	var hash string
+	var btt common.SignableTransaction
+	origin := common.AddressToOriginInfo(myAddress2)
+	if which == "T" || which == "t" {
+		fmt.Println("What's the torrent TXID?")
+		id = getStdin(scanner)
+		trans := common.TorrentRepTrans{id, []byte(hash),
+			common.RepMessage{true, true, true}}
+		btt = common.SignableTransaction{origin, trans, "TORRENT_REP", nil, nil, ""}
+	} else {
+		fmt.Println("What's the layer TXID?")
+		id = getStdin(scanner)
+		trans := common.LayerRepTrans{id, []byte(hash),
+			true, true}
+		btt = common.SignableTransaction{origin, trans, "LAYER_REP", nil, nil, ""}
+	}
+	fmt.Println("And the hash?")
+	hash = getStdin(scanner)
+
+	signed := btt.SignAndSetTxID(&myAddress2.PrivateKey)
+	log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
+	broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed)
 }
 
 func makeMuxRouter() http.Handler {

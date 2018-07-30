@@ -1,17 +1,18 @@
 package blockchain
 
 import (
-	"fmt"
-	"encoding/json"
-	"net/http"
 	"bytes"
-	"io/ioutil"
+	"encoding/json"
+	"fmt"
 	"github.com/denverquane/GoBlockShare/common"
+	"io/ioutil"
+	"net/http"
 )
 
 type BlockChain struct {
 	Blocks          []Block
 	processingBlock *Block
+	txMap			map[string]common.SignableTransaction
 }
 
 //IsProcessing checks the field for the block being processed, and if it is nil, indicates that the blocks for the
@@ -34,6 +35,11 @@ func (chain BlockChain) ToString() string {
 }
 
 func (chain BlockChain) GetTxById(txid string) common.SignableTransaction {
+	if value, ok := chain.txMap[txid]; ok {
+		return value
+	}
+
+	fmt.Println("Searching entire blockchain manually for: " + txid)
 	for _, block := range chain.Blocks {
 		for _, tx := range block.Transactions {
 			if tx.TxID == txid {
@@ -41,7 +47,7 @@ func (chain BlockChain) GetTxById(txid string) common.SignableTransaction {
 			}
 		}
 	}
-	return common.SignableTransaction{TxID:"ERROR"}
+	return common.SignableTransaction{TxID: "ERROR"}
 }
 
 //IsValid ensures that a blockchain's listed length is the same as the length of the array containing its blocks,
@@ -111,11 +117,13 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 		// Wait until block is mined successfully
 	}
 	fmt.Println("Successfully mined block!")
+	for _, v := range chain.processingBlock.Transactions {
+		chain.txMap[v.TxID] = v
+	}
 	chain.Blocks = append(chain.Blocks, *chain.processingBlock)
 	// fmt.Println(len(chain.Blocks[1].Transactions))
 	chain.processingBlock = nil
 }
-
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
 //possible replacing chain of longer length than the other
@@ -146,7 +154,7 @@ func (chain BlockChain) GetNewestBlock() Block {
 //MakeInitialChain constructs a simple new blockchain, with an initial block paying out to the provided address
 //This is a basic test to stimulate the network with an initial balance/transaction
 func MakeInitialChain() BlockChain {
-	chain := BlockChain{Blocks: make([]Block, 1)}
+	chain := BlockChain{make([]Block, 1), nil, make(map[string]common.SignableTransaction)}
 	chain.Blocks[0] = InitialBlock()
 	return chain
 }
@@ -162,54 +170,71 @@ func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
 	return chain
 }
 
-//GetAddressRep gets the reputation associated with a particular address by exploring the blockchain
-//func (chain BlockChain) GetAddressRep(addr address.Base64Address) string {
-//	validTorrents := 0
-//	qualityTorrents := 0
-//	accurateNameTorrents := 0
-//	totalTorrents := 0
-//
-//	validLayers := 0
-//	totalLayers := 0
-//
-//	for _, block := range chain.Blocks {
-//		for _, tx := range block.Transactions {
-//			tType := tx.Transaction.GetType()
-//			if tType == "TORRENT_REP" {
-//				torrentRep := tx.Transaction.(torrenttransaction.TorrentRepTrans)
-//				txId := torrentRep.TxID
-//				if chain.GetTxById(txId).Origin.Address == addr { //TODO this is inefficient! hashmap transactions?
-//					if torrentRep.RepMessage.AccurateName {
-//						accurateNameTorrents++
-//					}
-//					if torrentRep.RepMessage.HighQuality {
-//						qualityTorrents++
-//					}
-//					if torrentRep.RepMessage.WasValid {
-//						validTorrents++
-//					}
-//					totalTorrents++
-//				}
-//			} else if tType == "LAYER_REP" {
-//				layerRep := tx.Transaction.(torrenttransaction.LayerRepTrans)
-//				txId := layerRep.TxID
-//				if chain.GetTxById(txId).Origin.Address == addr {
-//					if layerRep.WasLayerValid {
-//						validLayers++
-//					}
-//					totalLayers++
-//				}
-//			}
-//		}
-//	}
-//	valid := (float64(validTorrents) / float64(totalTorrents)) * 100.0
-//	quality := (float64(qualityTorrents) / float64(totalTorrents)) * 100.0
-//	accurate := (float64(accurateNameTorrents) / float64(totalTorrents)) * 100.0
-//
-//	return "Had " + strconv.FormatFloat(valid, 'f', -1, 64) + " valid, " +
-//		strconv.FormatFloat(quality, 'f', -1, 64) + " quality, and " +
-//		strconv.FormatFloat(accurate, 'f', -1, 64) + " accurate, and a total of " + strconv.Itoa(totalTorrents)
-//}
+func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.ReputationSummary {
+	totalSummary := common.ReputationSummary{make(map[string]common.TorrentRep, 0),
+		make(map[string]common.LayerRep, 0)}
+
+	for _, block := range chain.Blocks {
+		for _, tx := range block.Transactions {
+			tType := tx.TransactionType
+			if tType == "TORRENT_REP" {
+				torrentRep := tx.Transaction.(common.TorrentRepTrans)
+				var summary common.TorrentRep
+				if val, ok := totalSummary.AllTorrentRep[string(torrentRep.TorrentHash)]; ok {
+					summary = val
+				} else {
+					summary = common.TorrentRep{0,0,0}
+				}
+				referencedTXID := torrentRep.TxID
+				if chain.GetTxById(referencedTXID).Origin.Address == addr {
+					if torrentRep.RepMessage.AccurateName {
+						summary.AccurateReports++
+					}
+					if torrentRep.RepMessage.HighQuality {
+						summary.QualityReports++
+					}
+					if torrentRep.RepMessage.WasValid {
+						summary.ValidReports++
+					}
+				}
+				totalSummary.AllTorrentRep[string(torrentRep.TorrentHash)] = summary
+			} else if tType == "LAYER_REP" {
+				layerRep := tx.Transaction.(common.LayerRepTrans)
+				var summary common.LayerRep
+				if val, ok := totalSummary.AllLayerRep[string(layerRep.LayerHash)]; ok {
+					summary = val
+				} else {
+					summary = common.LayerRep{0, 0, 0}
+				}
+				referencedTXID := layerRep.TxID
+				tx := chain.GetTxById(referencedTXID)
+				if tx.Origin.Address == addr {
+					if layerRep.WasLayerValid {
+						summary.ValidReports++
+					}
+					if !layerRep.WasLayerReceived {
+						summary.NotReceived++
+					}
+				}
+				totalSummary.AllLayerRep[string(layerRep.LayerHash)] = summary
+			} else if tType == "SHARED_LAYER"{
+				sharedLayer := tx.Transaction.(common.SharedLayerTrans)
+				var summary common.LayerRep
+				if val, ok := totalSummary.AllLayerRep[string(sharedLayer.SharedLayerHash)]; ok {
+					summary = val
+				} else {
+					summary = common.LayerRep{0, 0, 0}
+				}
+				if tx.Origin.Address == addr {
+					summary.SharedQuantity++
+				}
+				totalSummary.AllLayerRep[string(sharedLayer.SharedLayerHash)] = summary
+			}
+		}
+	}
+
+	return totalSummary
+}
 
 func BroadcastChain(url string, chain BlockChain) {
 	data, err := json.MarshalIndent(chain, "", "  ")
