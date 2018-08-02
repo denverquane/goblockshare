@@ -16,9 +16,7 @@ import (
 	"strconv"
 	"time"
 	"github.com/denverquane/GoBlockShare/common"
-	"sync"
-	"strings"
-)
+		)
 
 type torrFileSpecs struct {
 	url           string
@@ -43,55 +41,6 @@ func main() {
 	}
 
 	log.Fatal(run())
-	//total := time.Duration(0)
-	//for i := 0; i < 100; i++ {
-	//	lock := sync.Mutex{}
-	//	now := time.Now()
-	//	done := false
-	//
-	//	go addressWorker(lock, &done, "tesg", 'a')
-	//	go addressWorker(lock, &done, "tesg", 'b')
-	//	go addressWorker(lock, &done, "tesg", 'c')
-	//	go addressWorker(lock, &done, "tesg", 'd')
-	//
-	//	for {
-	//		lock.Lock()
-	//		isDone := done
-	//		lock.Unlock()
-	//
-	//		if isDone {
-	//			break
-	//		}
-	//	}
-	//
-	//	then := time.Now()
-	//	diff := then.Sub(now)
-	//	total += diff
-	//}
-	//
-	//fmt.Println((total / 100).String())
-}
-
-func addressWorker(mutex sync.Mutex, done *bool, prefix string, id byte) {
-	var addr string
-	for {
-		mutex.Lock()
-		isDone := *done
-		mutex.Unlock()
-		if isDone {
-			return
-		}
-
-		addr = string(common.GenerateNewPersonalAddress().Address)
-		if strings.Contains(addr, prefix) {
-			break
-		}
-	}
-	mutex.Lock()
-	*done = true
-	mutex.Unlock()
-	fmt.Println("Found by " + string(id) + " : " + addr)
-	return
 }
 
 func run() error {
@@ -349,7 +298,7 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 	for key, layer := range layers {
 		if key == layerId {
 			file, err := os.Open(layer.GetUrl())
-			defer file.Close()
+
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -361,6 +310,8 @@ func handleGetLayer(w http.ResponseWriter, r *http.Request) {
 			h := sha256.New()
 			h.Write(data)
 			io.WriteString(w, string(data))
+
+			file.Close()
 		}
 	}
 

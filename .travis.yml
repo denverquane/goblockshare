@@ -4,7 +4,10 @@ go:
   - master
 
 script:
- - go test -v ./...
+ - ./codecov.sh
+
+after_success:
+ - bash <(curl -s https://codecov.io/bash)
 
 notifications:
   slack: 
