@@ -21,6 +21,10 @@ type SignableTransaction struct {
 	TxID        string
 }
 
+func NewSignable(info OriginInfo, transaction TorrentTransaction, ttype string) SignableTransaction {
+	return SignableTransaction{info, transaction, ttype, nil, nil, ""}
+}
+
 type JSONSignableTransaction struct {
 	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
 	Transaction json.RawMessage

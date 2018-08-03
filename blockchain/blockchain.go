@@ -1,13 +1,9 @@
 package blockchain
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
+			"fmt"
 	"github.com/denverquane/GoBlockShare/common"
-	"io/ioutil"
-	"net/http"
-		"github.com/pkg/errors"
+				"github.com/pkg/errors"
 	)
 
 type BlockChain struct {
@@ -168,25 +164,25 @@ func (chain *BlockChain) waitForProcessingSwap(c chan bool) {
 
 //AreChainsSameBranch ensures that two chains are of the same structure and history, and therefore one might be a
 //possible replacing chain of longer length than the other
-func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
-	var min = 0
-	if chain1.Len() > chain2.Len() {
-		min = chain2.Len()
-	} else {
-		min = chain1.Len()
-	}
-
-	for i := 0; i < min; i++ {
-		a := chain1.Blocks[i]
-		b := chain2.Blocks[i]
-		ah, _ := a.GetHash(true)
-		bh, _ := b.GetHash(true)
-		if ah != bh {
-			return false
-		}
-	}
-	return true
-}
+//func AreChainsSameBranch(chain1, chain2 BlockChain) bool {
+//	var min = 0
+//	if chain1.Len() > chain2.Len() {
+//		min = chain2.Len()
+//	} else {
+//		min = chain1.Len()
+//	}
+//
+//	for i := 0; i < min; i++ {
+//		a := chain1.Blocks[i]
+//		b := chain2.Blocks[i]
+//		ah, _ := a.GetHash(true)
+//		bh, _ := b.GetHash(true)
+//		if ah != bh {
+//			return false
+//		}
+//	}
+//	return true
+//}
 
 func (chain BlockChain) GetNewestBlock() Block {
 	return chain.Blocks[chain.Len()-1]
@@ -202,14 +198,14 @@ func MakeInitialChain() BlockChain {
 
 //AppendMissingBlocks takes a chain, and appends all the transactions that are found on a longer chain to it
 //This is handy when using a single Global chain that should never be entirely replaced; only appended to
-func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
-	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid() {
-		for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
-			chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
-		}
-	}
-	return chain
-}
+//func (chain BlockChain) AppendMissingBlocks(longerChain BlockChain) BlockChain {
+//	if AreChainsSameBranch(chain, longerChain) && longerChain.IsValid() {
+//		for i := len(chain.Blocks); i < len(longerChain.Blocks); i++ {
+//			chain.Blocks = append(chain.Blocks, longerChain.Blocks[i])
+//		}
+//	}
+//	return chain
+//}
 
 func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.ReputationSummary {
 	totalSummary := common.ReputationSummary{make(map[string]common.TorrentRep, 0),
@@ -282,23 +278,23 @@ func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.Reputati
 	return totalSummary
 }
 
-func BroadcastChain(url string, chain BlockChain) {
-	data, err := json.MarshalIndent(chain, "", "  ")
-	//fmt.Println(string(data))
-	var bytee = []byte(string(data))
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
-	req.Header.Set("X-Custom-Header", "myvalue")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Access-Control-Allow-Origin", "*")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
-}
+//func BroadcastChain(url string, chain BlockChain) {
+//	data, err := json.MarshalIndent(chain, "", "  ")
+//	//fmt.Println(string(data))
+//	var bytee = []byte(string(data))
+//	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bytee))
+//	req.Header.Set("X-Custom-Header", "myvalue")
+//	req.Header.Set("Content-Type", "application/json")
+//	req.Header.Set("Access-Control-Allow-Origin", "*")
+//	client := &http.Client{}
+//	resp, err := client.Do(req)
+//	if err != nil {
+//		panic(err)
+//	}
+//	defer resp.Body.Close()
+//
+//	fmt.Println("response Status:", resp.Status)
+//	fmt.Println("response Headers:", resp.Header)
+//	body, _ := ioutil.ReadAll(resp.Body)
+//	fmt.Println("response Body:", string(body))
+//}
