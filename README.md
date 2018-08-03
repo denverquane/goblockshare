@@ -1,5 +1,6 @@
 # GoBlockShare
 [![GoDoc](https://godoc.org/github.com/denverquane/GoBlockShare?status.png)](https://godoc.org/github.com/denverquane/GoBlockShare)
+[![codecov](https://codecov.io/gh/denverquane/GoBlockShare/branch/master/graph/badge.svg)](https://codecov.io/gh/denverquane/GoBlockShare)
 [![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
 [![Go Report Card](https://goreportcard.com/badge/github.com/denverquane/GoBlockShare)](https://goreportcard.com/report/github.com/denverquane/GoBlockShare)
 
