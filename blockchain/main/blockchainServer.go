@@ -7,8 +7,8 @@ import (
 	"io"
 	"time"
 	"log"
-	"github.com/denverquane/GoBlockShare/blockchain"
-	"github.com/denverquane/GoBlockShare/common"
+	"github.com/denverquane/goblockshare/blockchain"
+	"github.com/denverquane/goblockshare/common"
 	"encoding/json"
 	"strconv"
 )
@@ -55,6 +55,7 @@ func makeMuxRouter() http.Handler {
 	muxRouter.HandleFunc("/block/{index}", handleGetBlock).Methods("GET")
 	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
 	muxRouter.HandleFunc("/reputation/{address}", handleGetReputation).Methods("GET")
+	muxRouter.HandleFunc("/alias/{address}", handleGetAlias).Methods("GET")
 
 	return muxRouter
 }
@@ -66,6 +67,18 @@ func handleIndexHelp(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+}
+
+func handleGetAlias(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	address := vars["address"]
+	alias := globalBlockchain.GetAddressAlias(common.Base64Address(address))
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Methods", "PUT")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	fmt.Println("Returning: " + alias)
+	io.WriteString(w, alias)
 }
 
 func handleGetReputation(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +94,6 @@ func handleGetReputation(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	io.WriteString(w, string(resp))
-
 }
 func handleGetBlockchain(w http.ResponseWriter, _ *http.Request) {
 

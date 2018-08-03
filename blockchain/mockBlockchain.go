@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"github.com/denverquane/GoBlockShare/common"
+	"github.com/denverquane/goblockshare/common"
 	"log"
 	"time"
 	"math/rand"
@@ -69,6 +69,15 @@ func (chain *BlockChain) AddMockTransactions() {
 		signed4 := btt4.SignAndSetTxID(&address4.PrivateKey)
 		log.Println("Gonna broadcast " + signed4.TxID + " to blockchains")
 		worked, err = chain.AddTransaction(signed4, "test addr")
+		if !worked {
+			log.Println(err.Error())
+		}
+
+		trans5 := common.SetAliasTrans{"Sample_Alias!"}
+		btt5 := common.SignableTransaction{origin4, trans5, common.SET_ALIAS, nil, nil, ""}
+		signed5 := btt5.SignAndSetTxID(&address4.PrivateKey)
+		log.Println("Gonna broadcast " + signed5.TxID + " to blockchains")
+		worked, err = chain.AddTransaction(signed5, "test addr")
 		if !worked {
 			log.Println(err.Error())
 		}

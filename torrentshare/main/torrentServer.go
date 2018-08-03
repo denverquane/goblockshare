@@ -15,7 +15,7 @@ import (
 	"io"
 	"strconv"
 	"time"
-	"github.com/denverquane/GoBlockShare/common"
+	"github.com/denverquane/goblockshare/common"
 		)
 
 type torrFileSpecs struct {

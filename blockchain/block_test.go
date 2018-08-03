@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"testing"
-	"github.com/denverquane/GoBlockShare/common"
+	"github.com/denverquane/goblockshare/common"
 	"fmt"
 )
 
