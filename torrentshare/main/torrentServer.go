@@ -69,7 +69,7 @@ func run() error {
 		file := <-results
 		if file.Name != "" {
 			trans := common.PublishTorrentTrans{file}
-			origin := common.AddressToOriginInfo(myAddress)
+			origin := myAddress.ConvertToOriginInfo()
 			btt := common.SignableTransaction{origin, trans, common.PUBLISH_TORRENT, nil, nil, ""}
 			signed := btt.SignAndSetTxID(&myAddress.PrivateKey)
 			log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
@@ -206,7 +206,7 @@ func listenForFeedback() {
 	var id string
 	var hash string
 	var btt common.SignableTransaction
-	origin := common.AddressToOriginInfo(myAddress2)
+	origin := myAddress2.ConvertToOriginInfo()
 	if which == "T" || which == "t" {
 		fmt.Println("What's the torrent TXID?")
 		id = getStdin(scanner)
@@ -260,6 +260,7 @@ func addLayer(id string, metadata common.LayerFileMetadata) {
 }
 
 func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
+
 	io.WriteString(w, "Please use the following endpoints:\n\nGET /torrents to see available torrents\n" +
 		"GET /layers to see available layers\nPOST /layers/<layerid> to POST a authentication transaction requesting the layer\n" +
 		"POST /addLayer/<layerid> to POST raw layer data to add to internal server records (under <layerid>)")

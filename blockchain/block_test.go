@@ -2,6 +2,8 @@ package blockchain
 
 import (
 	"testing"
+	"github.com/denverquane/GoBlockShare/common"
+	"fmt"
 )
 
 func TestInitialBlock(t *testing.T) {
@@ -38,4 +40,31 @@ func TestIsBlockSequenceValid(t *testing.T) {
 	if !IsBlockSequenceValid(failBlock, block) {
 		t.Fail()
 	}
+}
+
+func TestAddTransactionReference(t *testing.T) {
+	block := InitialBlock()
+	badSigned := common.SignableTransaction{}
+	err := block.AddTransaction(badSigned)
+	if err == nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	addr := common.GenerateNewPersonalAddress()
+	trans := common.SetAliasTrans{"gh"}
+	origin := addr.ConvertToOriginInfo()
+	signable := common.SignableTransaction{origin, trans, common.SET_ALIAS, nil, nil, ""}
+	err = block.AddTransaction(signable)
+	if err == nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+
+	signed := signable.SignAndSetTxID(&addr.PrivateKey)
+	err = block.AddTransaction(signed)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+
 }

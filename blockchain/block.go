@@ -109,12 +109,17 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 }
 
 //TODO check the transaction with the block_rules whenever we add (prevent double-spending, for example)
-func (block *Block) AddTransaction(trans common.SignableTransaction) {
+func (block *Block) AddTransaction(trans common.SignableTransaction) error {
+	if !trans.Verify() {
+		return errors.New("Transaction doesn't verify properly")
+	}
+
 	fmt.Println("Adding transaction to mining block")
 	block.mux.Lock()
 	block.Transactions = append(block.Transactions, trans)
 	block.cachedTransHash = "" //cached transactions are invalid now
 	block.mux.Unlock()
+	return nil
 }
 
 //calcHash calculates the hash for a given block based on ALL its attributes

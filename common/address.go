@@ -39,7 +39,7 @@ func (oi OriginInfo) ToString() string {
 		",\n\"Pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
 }
 
-func AddressToOriginInfo(address PersonalAddress) OriginInfo {
+func (address PersonalAddress) ConvertToOriginInfo () OriginInfo {
 	return OriginInfo{address.PublicKey.X, address.PublicKey.Y, address.Address}
 }
 

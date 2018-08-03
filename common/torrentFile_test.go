@@ -58,28 +58,28 @@ func TestTorrentFile_Equals(t *testing.T) {
 	}
 }
 
-//func TestAreSameTorrentBytes(t *testing.T) {
-//	sampleA, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"), "readme.md")
-//	sampleB, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"), "readme.md")
-//
-//	if !sampleA.Equals(sampleB) {
-//		fmt.Println("Not equals!")
-//		fmt.Println(sampleA)
-//		fmt.Println(sampleB)
-//		t.Fail()
-//	}
-//	fmt.Println(sampleA.GetDuplicatesTotal())
-//	sampleC, _ := MakeTorrentFromBytes(2, []byte("asdfasf"), "readme.md")
-//
-//	if sampleA.Equals(sampleC) {
-//		fmt.Println("Equals shorter!")
-//		t.Fail()
-//	}
-//
-//	sampleD, _ := MakeTorrentFromBytes(3, []byte("asdfasdf"), "readme.md")
-//
-//	if sampleA.Equals(sampleD) {
-//		fmt.Println("Equals diff seg length!")
-//		t.Fail()
-//	}
-//}
+func TestAreSameTorrentBytes(t *testing.T) {
+	sampleA, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"), "readme.md")
+	sampleB, _ := MakeTorrentFromBytes(2, []byte("asdfasdfhijk"), "readme.md")
+
+	if !sampleA.Equals(sampleB) {
+		fmt.Println("Not equals!")
+		fmt.Println(sampleA)
+		fmt.Println(sampleB)
+		t.Fail()
+	}
+
+	sampleC, _ := MakeTorrentFromBytes(2, []byte("asdfasf"), "readme.md")
+
+	if sampleA.Equals(sampleC) {
+		fmt.Println("Equals shorter!")
+		t.Fail()
+	}
+
+	sampleD, _ := MakeTorrentFromBytes(3, []byte("asdfasdf"), "readme.md")
+
+	if sampleA.Equals(sampleD) {
+		fmt.Println("Equals diff seg length!")
+		t.Fail()
+	}
+}
