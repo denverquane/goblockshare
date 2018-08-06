@@ -41,11 +41,9 @@ who desire more granularity and control.
 A valid Go installation is required to be able to install and run this project: https://golang.org/doc/install
 
 Assuming your Go installation is configured correctly, you can then clone this project using 
-`git clone https://github.com/denverquane/GoBlockShare`, and run `go build` from within the top directory (where main.go 
-is located). 
+`git clone https://github.com/denverquane/goblockshare`, and run `go build` on either the `torrentshare/main/torrentServer.go` file (which acts as a server for the actual torrent filesharing), or `blockchain/main/blockchainServer.go`, which functions as the server that hosts the blockchain and processes transactions.
 
-Assuming the build succeeds (which it should on the master branch), you can then test the app by running `GoBlockShare.exe` 
-(on Windows), or by running `go run main.go`.
+These two servers can be ran concurrently to allow full functionality with file sharing, torrent file broadcasting on the blockchain, checking reputation of users to permit or restrict access, etc.
 
 Happy Sharing!
 
