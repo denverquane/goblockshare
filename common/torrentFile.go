@@ -2,18 +2,18 @@ package common
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
-	"os"
-	"strconv"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 )
 
 type LayerFileMetadata struct {
 	fileUrl string //used specifically when receiving layers from other sources (without having an entire file yet)
-	Begin int64
-	Size int64
+	Begin   int64
+	Size    int64
 }
 
 func (lm LayerFileMetadata) GetUrl() string {
@@ -31,8 +31,8 @@ type TorrentFile struct {
 
 	LayerHashKeys []string //fine to expose publicly to say what layers the torrent has
 
-	layerHashMaps  map[string]LayerFileMetadata //don't expose; reveals entire torrent structure
-	url	string
+	layerHashMaps map[string]LayerFileMetadata //don't expose; reveals entire torrent structure
+	url           string
 }
 
 var kilobyte = 1000
@@ -68,7 +68,7 @@ func (torr TorrentFile) GetRawBytes() []byte {
 	ret = append(ret, Int64ToByteArr(torr.LayerByteSize)...)
 
 	for _, v := range torr.LayerHashKeys {
-		ret = append(ret, []byte(v)...)             //write the hashed key
+		ret = append(ret, []byte(v)...) //write the hashed key
 
 		//DON'T write the fileurl
 
@@ -111,8 +111,8 @@ func MakeTorrentFileFromFile(layerByteSize int64, url string, name string) (Torr
 
 func MakeTorrentFromBytes(layerByteSize int64, data []byte, name string) (TorrentFile, error) {
 
-	torr := TorrentFile{name, layerByteSize, 0,"", make([]string, 0),
-	make(map[string]LayerFileMetadata, 0), ""}
+	torr := TorrentFile{name, layerByteSize, 0, "", make([]string, 0),
+		make(map[string]LayerFileMetadata, 0), ""}
 
 	var offset int64
 	total := sha256.New()
@@ -152,7 +152,7 @@ func (torr TorrentFile) Validate() (bool, error) {
 	for hash, raw := range torr.layerHashMaps {
 		bytes := make([]byte, raw.Size)
 		read, _ := file.ReadAt(bytes, raw.Begin)
-		if hex.EncodeToString(hashSegment(bytes)) != hash || int64(read) != raw.Size{
+		if hex.EncodeToString(hashSegment(bytes)) != hash || int64(read) != raw.Size {
 			return false, nil
 		}
 	}

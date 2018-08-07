@@ -1,8 +1,8 @@
 package common
 
 import (
-	"testing"
 	"encoding/json"
+	"testing"
 )
 
 func TestSignableTransaction_GetHash(t *testing.T) {
@@ -21,7 +21,7 @@ func TestJSONSignableTransaction_ConvertToSignable(t *testing.T) {
 	origin := addr.ConvertToOriginInfo()
 
 	json := JSONSignableTransaction{origin, json.RawMessage(`{"precomputed": true}`), PUBLISH_TORRENT,
-	origin.PubKeyX, origin.PubKeyY, "sdfg"}
+		origin.PubKeyX, origin.PubKeyY, "sdfg"}
 	new := json.ConvertToSignable()
 
 	if json.Origin.Address != new.Origin.Address || json.Origin.PubKeyX != new.Origin.PubKeyX || json.Origin.PubKeyY != new.Origin.PubKeyY {

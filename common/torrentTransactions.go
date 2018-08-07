@@ -2,10 +2,10 @@ package common
 
 const (
 	PUBLISH_TORRENT = "PUBLISH_TORRENT"
-	TORRENT_REP = "TORRENT_REP"
-	SHARED_LAYER = "SHARED_LAYER"
-	LAYER_REP = "LAYER_REP"
-	SET_ALIAS = "SET_ALIAS"
+	TORRENT_REP     = "TORRENT_REP"
+	SHARED_LAYER    = "SHARED_LAYER"
+	LAYER_REP       = "LAYER_REP"
+	SET_ALIAS       = "SET_ALIAS"
 )
 
 type TorrentTransaction interface {
@@ -17,7 +17,7 @@ type TorrentTransaction interface {
 //validity of the file itself (does it form a cohesive file that runs/opens as expected?), and if the content itself is
 //high quality
 type RepMessage struct {
-	WasValid	 bool
+	WasValid     bool
 	HighQuality  bool
 	AccurateName bool
 }
@@ -44,12 +44,14 @@ func boolToByte(v bool) byte {
 type PublishTorrentTrans struct {
 	Torrent TorrentFile
 }
+
 func (tt PublishTorrentTrans) GetRawBytes() []byte {
 	return tt.Torrent.GetRawBytes()
 }
 func (tt PublishTorrentTrans) ToString() string {
 	return tt.Torrent.ToString()
 }
+
 //super cool compile-time interface check!
 var _ TorrentTransaction = PublishTorrentTrans{}
 
@@ -58,8 +60,9 @@ var _ TorrentTransaction = PublishTorrentTrans{}
 //left feedback on the share, if that address actually received the layer, etc.
 type SharedLayerTrans struct {
 	SharedLayerHash string
-	Recipient		Base64Address
+	Recipient       Base64Address
 }
+
 func (lt SharedLayerTrans) GetRawBytes() []byte {
 	return []byte(lt.SharedLayerHash + string(lt.Recipient))
 }
@@ -73,11 +76,12 @@ var _ TorrentTransaction = SharedLayerTrans{}
 //if a particular node/address is reputable when sharing layers that are valid and hash correctly,
 // or even if they shared the layer at all
 type LayerRepTrans struct {
-	TxID		string //the original transaction when the layer was shared with "me"
-	LayerHash	string
+	TxID             string //the original transaction when the layer was shared with "me"
+	LayerHash        string
 	WasLayerReceived bool
-	WasLayerValid	bool
+	WasLayerValid    bool
 }
+
 func (rt LayerRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + rt.LayerHash + string(boolToByte(rt.WasLayerReceived)) + string(boolToByte(rt.WasLayerValid)))
 }
@@ -90,10 +94,11 @@ var _ TorrentTransaction = LayerRepTrans{}
 
 //TorrentRepTrans represents a transaction for feedback on a Torrent. See RepMessage for more details
 type TorrentRepTrans struct {
-	TxID		string //the original transaction when the layer was shared with "me"
-	TorrentHash	string
-	RepMessage	RepMessage
+	TxID        string //the original transaction when the layer was shared with "me"
+	TorrentHash string
+	RepMessage  RepMessage
 }
+
 func (rt TorrentRepTrans) GetRawBytes() []byte {
 	return []byte(rt.TxID + rt.TorrentHash + string(rt.RepMessage.toBytes()))
 }
@@ -104,8 +109,9 @@ func (rt TorrentRepTrans) ToString() string {
 var _ TorrentTransaction = TorrentRepTrans{}
 
 type SetAliasTrans struct {
-	Alias 	string
+	Alias string
 }
+
 func (sat SetAliasTrans) GetRawBytes() []byte {
 	return []byte(sat.Alias)
 }

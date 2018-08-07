@@ -7,12 +7,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/denverquane/goblockshare/common"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"github.com/denverquane/goblockshare/common"
 )
 
 //Block represents the building "block" of the chain; any time a block is generated, it represents a change in the
@@ -27,8 +27,8 @@ type Block struct {
 	Difficulty   int
 	Nonce        string
 
-	cachedTransHash	 string
-	mux          sync.Mutex
+	cachedTransHash string
+	mux             sync.Mutex
 }
 
 //ToString simply returns a human-legible representation of a Block in question

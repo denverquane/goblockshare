@@ -1,8 +1,8 @@
 # GoBlockShare
-[![GoDoc](https://godoc.org/github.com/denverquane/GoBlockShare?status.png)](https://godoc.org/github.com/denverquane/GoBlockShare)
-[![codecov](https://codecov.io/gh/denverquane/GoBlockShare/branch/master/graph/badge.svg)](https://codecov.io/gh/denverquane/GoBlockShare)
-[![Build Status](https://travis-ci.org/denverquane/GoBlockShare.svg?branch=master)](https://travis-ci.org/denverquane/GoBlockShare)
-[![Go Report Card](https://goreportcard.com/badge/github.com/denverquane/GoBlockShare)](https://goreportcard.com/report/github.com/denverquane/GoBlockShare)
+[![GoDoc](https://godoc.org/github.com/denverquane/goblockshare?status.png)](https://godoc.org/github.com/denverquane/goblockshare)
+[![codecov](https://codecov.io/gh/denverquane/goblockshare/branch/master/graph/badge.svg)](https://codecov.io/gh/denverquane/goblockshare)
+[![Build Status](https://travis-ci.org/denverquane/goblockshare.svg?branch=master)](https://travis-ci.org/denverquane/goblockshare)
+[![Go Report Card](https://goreportcard.com/badge/github.com/denverquane/goblockshare)](https://goreportcard.com/report/github.com/denverquane/goblockshare)
 
 #### DISCLAIMER
 This project is under constant development, and likely will not be fully (or even partially) functioning until this 

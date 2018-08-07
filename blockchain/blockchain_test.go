@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-		"testing"
 	"github.com/denverquane/goblockshare/common"
+	"testing"
 )
 
 func TestMakeInitialChain(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMakeInitialChain(t *testing.T) {
 		t.Fail()
 	}
 
-	if  chain.ToString() == "" {
+	if chain.ToString() == "" {
 		t.Fail()
 	}
 }
@@ -74,16 +74,16 @@ func TestBlockChain_GetNewestBlock(t *testing.T) {
 func TestBlockChain_AddTransaction(t *testing.T) {
 	chain := MakeInitialChain()
 	addr := common.GenerateNewPersonalAddress()
-			origin := addr.ConvertToOriginInfo()
-			torr := common.SetAliasTrans{"sf"}
-			signable := common.NewSignable(origin, torr, common.SET_ALIAS)
-			added, err := chain.AddTransaction(signable, "")
-			if added || err == nil {
-				t.Fail()
-			}
-			signed := signable.SignAndSetTxID(&addr.PrivateKey)
-			added, err = chain.AddTransaction(signed, "")
-			if !added || err != nil {
-				t.Fail()
-			}
+	origin := addr.ConvertToOriginInfo()
+	torr := common.SetAliasTrans{"sf"}
+	signable := common.NewSignable(origin, torr, common.SET_ALIAS)
+	added, err := chain.AddTransaction(signable, "")
+	if added || err == nil {
+		t.Fail()
+	}
+	signed := signable.SignAndSetTxID(&addr.PrivateKey)
+	added, err = chain.AddTransaction(signed, "")
+	if !added || err != nil {
+		t.Fail()
+	}
 }

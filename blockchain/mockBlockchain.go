@@ -3,8 +3,8 @@ package blockchain
 import (
 	"github.com/denverquane/goblockshare/common"
 	"log"
-	"time"
 	"math/rand"
+	"time"
 )
 
 func (chain *BlockChain) AddMockTransactions() {
@@ -61,7 +61,6 @@ func (chain *BlockChain) AddMockTransactions() {
 			time.Sleep(100)
 		}
 
-
 		trans4 := common.LayerRepTrans{signed3.TxID, torr.LayerHashKeys[0],
 			true, true}
 		origin4 := address4.ConvertToOriginInfo()
@@ -82,6 +81,5 @@ func (chain *BlockChain) AddMockTransactions() {
 			log.Println(err.Error())
 		}
 	}
-
 
 }

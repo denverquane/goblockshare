@@ -13,7 +13,7 @@ const TorrentPortDefault = "8000"
 type EnvVars struct {
 	BlockchainHost string
 	BlockchainPort string
-	TorrentPort	   string
+	TorrentPort    string
 }
 
 func LoadEnvFromFile(topDir string) EnvVars {

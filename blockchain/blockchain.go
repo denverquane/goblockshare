@@ -1,10 +1,10 @@
 package blockchain
 
 import (
-			"fmt"
+	"fmt"
 	"github.com/denverquane/goblockshare/common"
-				"github.com/pkg/errors"
-	)
+	"github.com/pkg/errors"
+)
 
 type BlockChain struct {
 	Blocks          []Block
@@ -212,14 +212,14 @@ func (chain BlockChain) GetAddressAlias(addr common.Base64Address) string {
 		for _, tx := range block.Transactions {
 			tType := tx.TransactionType
 			//TODO consider if someone sets their alias multiple times...
-			if tType == common.SET_ALIAS && tx.Origin.Address == addr{
+			if tType == common.SET_ALIAS && tx.Origin.Address == addr {
 				aliasTrans := tx.Transaction.(common.SetAliasTrans)
 				return aliasTrans.Alias
 			}
 		}
 	}
 	return "NULL"
-	}
+}
 
 func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.ReputationSummary {
 	totalSummary := common.ReputationSummary{make(map[string]common.TorrentRep, 0),

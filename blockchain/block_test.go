@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"testing"
-	"github.com/denverquane/goblockshare/common"
 	"fmt"
+	"github.com/denverquane/goblockshare/common"
+	"testing"
 )
 
 func TestInitialBlock(t *testing.T) {

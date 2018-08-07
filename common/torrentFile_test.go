@@ -2,10 +2,10 @@ package common
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 	"time"
-	"os"
 )
 
 func TestMakeTorrentFile(t *testing.T) {
@@ -34,7 +34,7 @@ func TestFileVsBytesTorrentFile(t *testing.T) {
 	bytes := make([]byte, info.Size())
 	file.Read(bytes)
 
-	torr2, err := MakeTorrentFromBytes(int64(kilobyte), bytes,"readme.md")
+	torr2, err := MakeTorrentFromBytes(int64(kilobyte), bytes, "readme.md")
 
 	if !torr.Equals(torr2) {
 		t.Fail()

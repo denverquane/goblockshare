@@ -2,21 +2,21 @@ package main
 
 import (
 	"bufio"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"os"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"github.com/denverquane/goblockshare/common"
 	"github.com/gorilla/mux"
 	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 	"strconv"
 	"time"
-	"github.com/denverquane/goblockshare/common"
-		)
+)
 
 type torrFileSpecs struct {
 	url           string
@@ -73,7 +73,7 @@ func run() error {
 			btt := common.SignableTransaction{origin, trans, common.PUBLISH_TORRENT, nil, nil, ""}
 			signed := btt.SignAndSetTxID(&myAddress.PrivateKey)
 			log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
-			broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed)
+			broadcastTransaction(env.BlockchainHost+":"+env.BlockchainPort+"/addTransaction", signed)
 			registerTorrent(file)
 
 			//origin2 := common.AddressToOriginInfo(myAddress2)
@@ -225,7 +225,7 @@ func listenForFeedback() {
 
 	signed := btt.SignAndSetTxID(&myAddress2.PrivateKey)
 	log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
-	broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed)
+	broadcastTransaction(env.BlockchainHost+":"+env.BlockchainPort+"/addTransaction", signed)
 }
 
 func makeMuxRouter() http.Handler {
@@ -261,8 +261,8 @@ func addLayer(id string, metadata common.LayerFileMetadata) {
 
 func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
 
-	io.WriteString(w, "Please use the following endpoints:\n\nGET /torrents to see available torrents\n" +
-		"GET /layers to see available layers\nPOST /layers/<layerid> to POST a authentication transaction requesting the layer\n" +
+	io.WriteString(w, "Please use the following endpoints:\n\nGET /torrents to see available torrents\n"+
+		"GET /layers to see available layers\nPOST /layers/<layerid> to POST a authentication transaction requesting the layer\n"+
 		"POST /addLayer/<layerid> to POST raw layer data to add to internal server records (under <layerid>)")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")

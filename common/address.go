@@ -7,9 +7,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"strings"
-	"math/big"
 	"log"
+	"math/big"
+	"strings"
 )
 
 type Base64Address string
@@ -39,7 +39,7 @@ func (oi OriginInfo) ToString() string {
 		",\n\"Pubkeyy\":" + oi.PubKeyY.String() + "\n},\n"
 }
 
-func (address PersonalAddress) ConvertToOriginInfo () OriginInfo {
+func (address PersonalAddress) ConvertToOriginInfo() OriginInfo {
 	return OriginInfo{address.PublicKey.X, address.PublicKey.Y, address.Address}
 }
 
@@ -60,7 +60,7 @@ func GenerateNewPersonalAddress() PersonalAddress {
 	address := HashPublicToB64Address(priv.PublicKey)
 
 	//get rid of "O" and "l" letters to avoid ambiguity with numbers
-	if strings.Contains(string(address), "O") || strings.Contains(string(address), "l") || strings.Contains(string(address), "/"){
+	if strings.Contains(string(address), "O") || strings.Contains(string(address), "l") || strings.Contains(string(address), "/") {
 		//fmt.Println("invalid char, regenerating")
 		return GenerateNewPersonalAddress()
 	}

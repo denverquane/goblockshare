@@ -3,22 +3,20 @@ package common
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"fmt"
-	"log"
-	"math/big"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"log"
+	"math/big"
 )
 
-
-
 type SignableTransaction struct {
-	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
-	Transaction TorrentTransaction
+	Origin          OriginInfo // needed to say who I am (WITHIN the transaction)
+	Transaction     TorrentTransaction
 	TransactionType string
-	R, S        *big.Int // signature of the transaction, should be separate from the actual "message" components
-	TxID        string
+	R, S            *big.Int // signature of the transaction, should be separate from the actual "message" components
+	TxID            string
 }
 
 func NewSignable(info OriginInfo, transaction TorrentTransaction, ttype string) SignableTransaction {
@@ -26,11 +24,11 @@ func NewSignable(info OriginInfo, transaction TorrentTransaction, ttype string) 
 }
 
 type JSONSignableTransaction struct {
-	Origin      OriginInfo // needed to say who I am (WITHIN the transaction)
-	Transaction json.RawMessage
+	Origin          OriginInfo // needed to say who I am (WITHIN the transaction)
+	Transaction     json.RawMessage
 	TransactionType string
-	R, S        *big.Int // signature of the transaction, should be separate from the actual "message" components
-	TxID        string
+	R, S            *big.Int // signature of the transaction, should be separate from the actual "message" components
+	TxID            string
 }
 
 func (js JSONSignableTransaction) ConvertToSignable() SignableTransaction {
@@ -147,4 +145,3 @@ func (st SignableTransaction) VerifyWithKey(key ecdsa.PublicKey) bool {
 	r, s := st.GetRS()
 	return ecdsa.Verify(&key, st.GetHash(), r, s)
 }
-

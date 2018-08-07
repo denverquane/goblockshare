@@ -1,16 +1,16 @@
 package main
 
 import (
-	"net/http"
-	"github.com/gorilla/mux"
+	"encoding/json"
 	"fmt"
-	"io"
-	"time"
-	"log"
 	"github.com/denverquane/goblockshare/blockchain"
 	"github.com/denverquane/goblockshare/common"
-	"encoding/json"
+	"github.com/gorilla/mux"
+	"io"
+	"log"
+	"net/http"
 	"strconv"
+	"time"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -45,8 +45,6 @@ func run() error {
 	return nil
 }
 
-
-
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
@@ -61,35 +59,47 @@ func makeMuxRouter() http.Handler {
 }
 
 func handleIndexHelp(w http.ResponseWriter, _ *http.Request) {
-	io.WriteString(w, "Please use the following endpoints:\n\nGET /blockchain to see the entire recorded blockchain\n" +
-		"GET /block/<index> to see a specific block of the chain\nPOST /addTransaction to POST a signed transaction " +
+	io.WriteString(w, "Please use the following endpoints:\n\nGET /blockchain to see the entire recorded blockchain\n"+
+		"GET /block/<index> to see a specific block of the chain\nPOST /addTransaction to POST a signed transaction "+
 		"onto the blockchain")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 }
 
+type Alias struct {
+	Data string
+}
+
 func handleGetAlias(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
 	alias := globalBlockchain.GetAddressAlias(common.Base64Address(address))
+	aliass := Alias{alias}
+	aliases := make([]Alias, 1)
+	aliases[0] = aliass
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
-	fmt.Println("Returning: " + alias)
-	io.WriteString(w, alias)
+	resp, err := json.Marshal(aliases)
+	if err != nil {
+		fmt.Println(err)
+	}
+	io.WriteString(w, string(resp))
 }
 
 func handleGetReputation(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
 	rep := globalBlockchain.GetAddressRep(common.Base64Address(address))
+	reps := make([]common.ReputationSummary, 1)
+	reps[0] = rep
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
-	resp, err := json.Marshal(rep)
+	resp, err := json.Marshal(reps)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -136,7 +146,6 @@ func handleGetBlock(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(data))
 }
 
-
 func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 	var jsonMessage common.JSONSignableTransaction
 
@@ -149,7 +158,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 
 	decoded := jsonMessage.ConvertToSignable()
 
-	if decoded.TransactionType == "TORRENT_REP"{
+	if decoded.TransactionType == "TORRENT_REP" {
 		rep := decoded.Transaction.(common.TorrentRepTrans)
 		if globalBlockchain.ProcessingReferencedTX(rep.TxID) {
 			respondWithJSON(w, r, http.StatusBadRequest, "TX referenced in REP transaction is still being processed")
