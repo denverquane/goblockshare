@@ -25,36 +25,27 @@ func (chain *BlockChain) AddMockTransactions() {
 			time.Sleep(100)
 		}
 
-		address2 := common.GenerateNewPersonalAddress()
-		res := rand.Intn(2) == 0
-		res1 := rand.Intn(2) == 0
-		res2 := rand.Intn(2) == 0
+		for i := 0; i < 10; i++ {
+			address2 := common.GenerateNewPersonalAddress()
+			res := rand.Intn(2) == 0
+			res1 := rand.Intn(2) == 0
+			res2 := rand.Intn(2) == 0
+			trans2 := common.TorrentRepTrans{signed.TxID, signed.Transaction.(common.PublishTorrentTrans).Torrent.TotalHash,
+				common.RepMessage{res, res1, res2}}
+			origin2 := address2.ConvertToOriginInfo()
+			btt2 := common.SignableTransaction{origin2, trans2, common.TORRENT_REP, nil, nil, ""}
+			signed2 := btt2.SignAndSetTxID(&address2.PrivateKey)
+			log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
+			worked, err = chain.AddTransaction(signed2, "test addr")
+			if !worked {
+				log.Println(err.Error())
+			}
 
-		trans2 := common.TorrentRepTrans{signed.TxID, signed.Transaction.(common.PublishTorrentTrans).Torrent.TotalHash,
-			common.RepMessage{res, res1, res2}}
-		origin2 := address2.ConvertToOriginInfo()
-		btt2 := common.SignableTransaction{origin2, trans2, common.TORRENT_REP, nil, nil, ""}
-		signed2 := btt2.SignAndSetTxID(&address2.PrivateKey)
-		log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
-		worked, err = chain.AddTransaction(signed2, "test addr")
-		if !worked {
-			log.Println(err.Error())
+			for chain.IsProcessing() {
+				time.Sleep(100)
+			}
 		}
 
-		worked, err = chain.AddTransaction(signed2, "test addr")
-		if !worked {
-			log.Println(err.Error())
-		}
-
-		worked, err = chain.AddTransaction(signed2, "test addr")
-
-		if !worked {
-			log.Println(err.Error())
-		}
-
-		for chain.IsProcessing() {
-			time.Sleep(100)
-		}
 
 		address3 := common.GenerateNewPersonalAddress()
 		address4 := common.GenerateNewPersonalAddress()

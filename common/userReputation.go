@@ -58,6 +58,8 @@ func (summary ReputationSummary) ToJSONSummary() JSONRepSummary {
 	if total != 0.0 {
 		json.ValidLayerFraction = json.ValidLayerFraction / total
 		json.NotReceivedLayerFraction = json.NotReceivedLayerFraction / total
+	} else {
+		json.NotReceivedLayerFraction = 1.0
 	}
 
 	return json
