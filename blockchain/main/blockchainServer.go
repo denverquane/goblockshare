@@ -93,7 +93,7 @@ func handleGetReputation(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	address := vars["address"]
 	rep := globalBlockchain.GetAddressRep(common.Base64Address(address))
-	reps := make([]common.ReputationSummary, 1)
+	reps := make([]common.JSONRepSummary, 1)
 	reps[0] = rep
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")

@@ -41,6 +41,17 @@ func (chain *BlockChain) AddMockTransactions() {
 			log.Println(err.Error())
 		}
 
+		worked, err = chain.AddTransaction(signed2, "test addr")
+		if !worked {
+			log.Println(err.Error())
+		}
+
+		worked, err = chain.AddTransaction(signed2, "test addr")
+
+		if !worked {
+			log.Println(err.Error())
+		}
+
 		for chain.IsProcessing() {
 			time.Sleep(100)
 		}

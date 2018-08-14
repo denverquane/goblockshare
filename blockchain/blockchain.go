@@ -221,7 +221,7 @@ func (chain BlockChain) GetAddressAlias(addr common.Base64Address) string {
 	return "NULL"
 }
 
-func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.ReputationSummary {
+func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.JSONRepSummary {
 	totalSummary := common.ReputationSummary{make(map[string]common.TorrentRep, 0),
 		make(map[string]common.LayerRep, 0)}
 
@@ -236,8 +236,9 @@ func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.Reputati
 					if val, ok := totalSummary.TorrentRep[torrentRep.TorrentHash]; ok {
 						summary = val
 					} else {
-						summary = common.TorrentRep{0, 0, 0}
+						summary = common.TorrentRep{0, 0, 0, 0}
 					}
+					summary.TotalReports++
 
 					if torrentRep.RepMessage.AccurateName {
 						summary.AccurateReports++
@@ -289,7 +290,7 @@ func (chain BlockChain) GetAddressRep(addr common.Base64Address) common.Reputati
 		}
 	}
 
-	return totalSummary
+	return totalSummary.ToJSONSummary()
 }
 
 //func BroadcastChain(url string, chain BlockChain) {
