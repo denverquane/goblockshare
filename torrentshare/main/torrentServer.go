@@ -75,14 +75,6 @@ func run() error {
 			log.Println("Gonna broadcast " + signed.TxID + " to blockchains")
 			broadcastTransaction(env.BlockchainHost+":"+env.BlockchainPort+"/addTransaction", signed)
 			registerTorrent(file)
-
-			//origin2 := common.AddressToOriginInfo(myAddress2)
-			//trans2 := common.TorrentRepTrans{signed.TxID,
-			//	common.RepMessage{true, true, true}}
-			//btt2 := common.SignableTransaction{origin2, trans2, "TORRENT_REP", nil, nil, ""}
-			//signed2 := btt2.SignAndSetTxID(&myAddress2.PrivateKey)
-			//log.Println("Gonna broadcast " + signed2.TxID + " to blockchains")
-			//broadcastTransaction(env.BlockchainHost + ":" + env.BlockchainPort + "/addTransaction", signed2)
 		}
 	}
 
@@ -127,74 +119,6 @@ func torrentWorker(id int, jobs <-chan torrFileSpecs, results chan<- common.Torr
 		}
 		results <- torr
 	}
-}
-
-func listenForInput() {
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Please enter the IP and port of a node you wish to query for torrents and layers")
-	fmt.Println("For example (don't include http://): localhost:7070")
-	fmt.Println("Enter \"done\" or \"quit\" at any time to finish querying peers")
-
-	ip := getStdin(scanner)
-
-	for ip != "quit" && ip != "done" {
-		fmt.Println("Query \"" + ip + "\" for torrents, or layers? [T/L]")
-		choice := getStdin(scanner)
-		var end string
-		if choice == "done" || choice == "quit" {
-			break
-		} else if choice == "T" || choice == "t" || choice == "torrent" || choice == "tor" || choice == "torr" {
-			end = "torrents"
-		} else {
-			end = "layers"
-		}
-		resp, err := http.Get("http://" + ip + "/" + end)
-		if err != nil {
-			fmt.Println(err)
-			fmt.Println("Please enter new IP:")
-			ip = getStdin(scanner)
-			continue
-		} else {
-			body, _ := ioutil.ReadAll(resp.Body)
-			fmt.Println(end + ": " + string(body))
-			resp.Body.Close()
-		}
-		fmt.Println("Query same IP for more info? [y/n]")
-		t := getStdin(scanner)
-		if t == "done" || t == "quit" {
-			break
-		} else if t == "y" || t == "yes" || t == "T" || t == "Yes" {
-			//nothing, keep same ip
-		} else {
-			fmt.Println("Please enter new IP:")
-			ip = getStdin(scanner)
-		}
-	}
-
-	//for scanner.Scan() {
-	//	if scanner.Text() != "" {
-	//		layer := scanner.Text()
-	//
-	//		resp, err := http.Get("http://" + ip + "/layers/" + layer)
-	//		if err != nil {
-	//			fmt.Println(err)
-	//			break
-	//		} else {
-	//			body, err := ioutil.ReadAll(resp.Body)
-	//			if err == nil {
-	//				fmt.Println("Layer: " + string(body))
-	//				meta := torrentfile.AppendLayerDataToFile(layer, body)
-	//				network.AddLayer(layer, meta)
-	//			} else {
-	//				fmt.Println(err)
-	//			}
-	//			resp.Body.Close()
-	//			break
-	//		}
-	//	}
-	//	break
-	//}
-	log.Println("Done receiving input, will only respond to http endpoints now")
 }
 
 func listenForFeedback() {
