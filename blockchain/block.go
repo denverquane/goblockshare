@@ -128,16 +128,13 @@ func (block Block) GetHash(rehashTransactions bool) (string, string) {
 	record := string(block.Index) + block.Timestamp
 	trans := ""
 	if rehashTransactions {
-		fmt.Println("recalculating trans hash")
-
 		for _, v := range block.Transactions {
 			trans += string(v.GetHash())
 		}
 	} else {
 		trans = block.cachedTransHash
 	}
-	record += trans
-	record += block.PrevHash + string(block.Difficulty) + block.Nonce
+	record += trans + block.PrevHash + string(block.Difficulty) + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)

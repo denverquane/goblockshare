@@ -24,6 +24,32 @@ type torrFileSpecs struct {
 	name          string
 }
 
+type torrentWish struct {
+	name 			string
+	layersObtained  map[string]bool
+}
+
+func registerNewTorrentWish(name string, wantLayers []string) {
+	if torrentWishlist == nil {
+		torrentWishlist = make([]torrentWish, 1)
+	}
+
+	wish := torrentWish{name: name, layersObtained:make(map[string]bool)}
+
+	for _, v := range wantLayers {
+		if layers == nil {
+			layers = make(map[string]common.LayerFileMetadata)
+		}
+		if _, ok := layers[v]; ok {
+			wish.layersObtained[v] = true
+		} else {
+			wish.layersObtained[v] = false
+		}
+	}
+	torrentWishlist = append(torrentWishlist, wish)
+}
+
+
 var env common.EnvVars
 
 var myAddress common.PersonalAddress
@@ -32,6 +58,8 @@ var torrentPath string
 
 var torrents []common.TorrentFile
 var layers map[string]common.LayerFileMetadata
+
+var torrentWishlist []torrentWish
 
 func main() {
 	env = common.LoadEnvFromFile("torrentshare")

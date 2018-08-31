@@ -69,7 +69,7 @@ Happy Sharing!
   - [ ] Broadcast local segments available for sharing
 - [X] Basic JS Frontend for viewing the blockchain in realtime
 - [ ] JS Frontend for posting, deleting, editing, etc. messages and transactions
-- [ ] Electron integration for running the web app as a native desktop app
+- [ ] Electron integration for running the web app as a native desktop app (https://hackernoon.com/how-to-add-a-gui-to-your-golang-app-in-5-easy-steps-c25c99d4d8e0)
 
 ## Project Structure:
 This app is comprised of two distinct parts as of 7/1/18.
