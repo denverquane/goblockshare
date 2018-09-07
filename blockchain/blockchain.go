@@ -70,7 +70,7 @@ func (chain BlockChain) IsValid() bool {
 	return true
 }
 
-func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payableAddress common.Base64Address) (bool, error) {
+func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payableAddress common.Base64Address, bcast *chan Block) (bool, error) {
 	valid, err := chain.validateNewTransaction(trans)
 	if !valid {
 		return false, err
@@ -88,7 +88,7 @@ func (chain *BlockChain) AddTransaction(trans common.SignableTransaction, payabl
 		var c = make(chan bool)
 		chain.processingBlock = &invalidBlock
 		fmt.Println("Mining a new block")
-		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c)
+		go chain.processingBlock.hashUntilValid(chain.GetNewestBlock().Difficulty, c, bcast)
 		go chain.waitForProcessingSwap(c)
 		return true, nil
 	}

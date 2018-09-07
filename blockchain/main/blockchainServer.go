@@ -11,11 +11,22 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 var globalBlockchain *blockchain.BlockChain
 
 var env common.EnvVars
+
+var clients = make(map[*websocket.Conn]bool) // connected clients
+var broadcast = make(chan blockchain.Block) // broadcast channel
+
+// Configure the upgrader
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func main() {
 	env = common.LoadEnvFromFile("blockchain")
@@ -38,6 +49,7 @@ func run() error {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	go handleMessages()
 
 	if err := s.ListenAndServe(); err != nil {
 		return err
@@ -55,7 +67,33 @@ func makeMuxRouter() http.Handler {
 	muxRouter.HandleFunc("/reputation/{address}", handleGetReputation).Methods("GET")
 	muxRouter.HandleFunc("/alias/{address}", handleGetAlias).Methods("GET")
 
+	muxRouter.HandleFunc("/ws", handleConnections)
+
 	return muxRouter
+}
+
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	// Upgrade initial GET request to a websocket
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Make sure we close the connection when the function returns
+	defer ws.Close()
+
+	// Register our new client
+	clients[ws] = true
+
+	for {
+		var msg blockchain.Block
+		// Read in a new message as JSON and map it to a Message object
+		err := ws.ReadJSON(&msg)
+		if err != nil {
+			log.Printf("error: %v", err)
+			delete(clients, ws)
+			break
+		}
+	}
 }
 
 func handleIndexHelp(w http.ResponseWriter, _ *http.Request) {
@@ -173,7 +211,7 @@ func handleWriteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := globalBlockchain.AddTransaction(decoded, jsonMessage.Origin.Address)
+	success, err := globalBlockchain.AddTransaction(decoded, jsonMessage.Origin.Address, &broadcast)
 	if !success {
 		respondWithJSON(w, r, http.StatusBadRequest, err.Error())
 	} else {
@@ -193,4 +231,21 @@ func respondWithJSON(w http.ResponseWriter, _ *http.Request, code int, payload i
 	w.Header().Add("Access-Control-Allow-Methods", "PUT")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	w.Write(response)
+}
+
+func handleMessages() {
+	for {
+		// Grab the next message from the broadcast channel
+		msg := <-broadcast
+		// Send it out to every client that is currently connected
+		fmt.Println("Have msg to transmit")
+		for client := range clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
 }

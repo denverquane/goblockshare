@@ -92,7 +92,7 @@ func InitialBlock() Block {
 
 //hashUntilValid continually increments a block's "Nonce" until the block hashes correctly to the provided
 //difficulty
-func (block *Block) hashUntilValid(difficulty int, c chan bool) {
+func (block *Block) hashUntilValid(difficulty int, c chan bool, bcast *chan Block) {
 	block.mux.Lock()
 	block.Hash, block.cachedTransHash = block.GetHash(true)
 	block.mux.Unlock()
@@ -104,6 +104,9 @@ func (block *Block) hashUntilValid(difficulty int, c chan bool) {
 		block.Nonce = hexx
 		block.Hash, block.cachedTransHash = block.GetHash(block.cachedTransHash == "nil")
 		block.mux.Unlock()
+	}
+	if bcast != nil {
+		*bcast <- *block
 	}
 	c <- true
 }

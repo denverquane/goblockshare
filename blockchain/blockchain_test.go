@@ -77,12 +77,12 @@ func TestBlockChain_AddTransaction(t *testing.T) {
 	origin := addr.ConvertToOriginInfo()
 	torr := common.SetAliasTrans{"sf"}
 	signable := common.NewSignable(origin, torr, common.SET_ALIAS)
-	added, err := chain.AddTransaction(signable, "")
+	added, err := chain.AddTransaction(signable, "", nil)
 	if added || err == nil {
 		t.Fail()
 	}
 	signed := signable.SignAndSetTxID(&addr.PrivateKey)
-	added, err = chain.AddTransaction(signed, "")
+	added, err = chain.AddTransaction(signed, "", nil)
 	if !added || err != nil {
 		t.Fail()
 	}
