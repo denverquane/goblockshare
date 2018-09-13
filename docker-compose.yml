@@ -1,0 +1,25 @@
+version: '3'
+services:
+  goblockui:
+    image: "denverquane/goblockui"
+    restart: always
+    ports:
+      - "3000:3000"
+    cap_drop:
+      - ALL
+
+  goblockchain:
+    image: "denverquane/goblockchain"
+    restart: always
+    ports:
+      - "5000:5000"
+    cap_drop:
+      - ALL
+  
+  goblocktorrent:
+    image: "denverquane/goblocktorrent"
+    restart: always
+    ports:
+      - "8000:8000"
+    cap_drop:
+      - ALL
