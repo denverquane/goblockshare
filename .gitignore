@@ -1,3 +1,5 @@
 *.exe
 *.log
 /.idea
+node_modules
+build
