@@ -118,6 +118,7 @@ func run() error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
+
 	if err := s.ListenAndServe(); err != nil {
 		return err
 	}
@@ -190,6 +191,7 @@ func makeMuxRouter() http.Handler {
 
 	muxRouter.HandleFunc("/layers/{layer}", handleGetLayer).Methods("POST")
 	muxRouter.HandleFunc("/addLayer/{layer}", handleReceiveLayer).Methods("POST")
+	muxRouter.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./frontend/build/static"))))
 
 	return muxRouter
 }
@@ -211,7 +213,7 @@ func addLayer(id string, metadata common.LayerFileMetadata) {
 	layers[id] = metadata
 }
 
-func handleIndexHelp(w http.ResponseWriter, r *http.Request) {
+func handleIndexHelp(w http.ResponseWriter, _ *http.Request) {
 
 	io.WriteString(w, "Please use the following endpoints:\n\nGET /torrents to see available torrents\n"+
 		"GET /layers to see available layers\nPOST /layers/<layerid> to POST a authentication transaction requesting the layer\n"+

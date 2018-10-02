@@ -1,14 +1,23 @@
-FROM golang:latest as builder
+FROM golang:latest as gobuilder
 RUN mkdir /app
 ADD . /app/
 WORKDIR /app
 RUN go get -d ./main
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app ./main
 
+FROM node:9.6.1 as nodebuilder
+RUN npm install -g serve
+CMD serve -s build
+EXPOSE 3000
+COPY package.json package.json
+RUN npm install
+COPY . .
+RUN npm run build --production
+
 FROM alpine:latest as runner
 # RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /app .
+COPY --from=gobuilder /app .
 EXPOSE "7000"
 ENV PORT 7000
 CMD ["./app"]  
