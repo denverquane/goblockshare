@@ -1,9 +1,9 @@
 package blockchain
 
 import (
+	"errors"
 	"fmt"
 	"github.com/denverquane/goblockshare/common"
-	"github.com/pkg/errors"
 )
 
 type BlockChain struct {

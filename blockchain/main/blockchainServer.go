@@ -6,12 +6,12 @@ import (
 	"github.com/denverquane/goblockshare/blockchain"
 	"github.com/denverquane/goblockshare/common"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/gorilla/websocket"
 )
 
 var globalBlockchain *blockchain.BlockChain
@@ -19,7 +19,7 @@ var globalBlockchain *blockchain.BlockChain
 var env common.EnvVars
 
 var clients = make(map[*websocket.Conn]bool) // connected clients
-var broadcast = make(chan blockchain.Block) // broadcast channel
+var broadcast = make(chan blockchain.Block)  // broadcast channel
 
 // Configure the upgrader
 var upgrader = websocket.Upgrader{
@@ -29,14 +29,26 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	env = common.LoadEnvFromFile("blockchain")
+	//env = common.LoadEnvFromFile("blockchain")
+	//
+	//temp := blockchain.MakeInitialChain()
+	//globalBlockchain = &temp
+	//
+	//globalBlockchain.AddMockTransactions()
+	//
+	//log.Fatal(run())
+	http.HandleFunc("/api/", apiHandler)
+	http.Handle("/", http.FileServer(http.Dir("./blockchain/frontend/build")))
+	log.Fatal(http.ListenAndServe(":3000", nil))
+}
+func apiHandler(w http.ResponseWriter, r *http.Request) {}
 
-	temp := blockchain.MakeInitialChain()
-	globalBlockchain = &temp
+func IndexHandler(entrypoint string) func(w http.ResponseWriter, r *http.Request) {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, entrypoint)
+	}
 
-	globalBlockchain.AddMockTransactions()
-
-	log.Fatal(run())
+	return http.HandlerFunc(fn)
 }
 
 func run() error {
