@@ -29,26 +29,17 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	//env = common.LoadEnvFromFile("blockchain")
-	//
-	//temp := blockchain.MakeInitialChain()
-	//globalBlockchain = &temp
-	//
-	//globalBlockchain.AddMockTransactions()
-	//
-	//log.Fatal(run())
-	http.HandleFunc("/api/", apiHandler)
-	http.Handle("/", http.FileServer(http.Dir("./blockchain/frontend/build")))
-	log.Fatal(http.ListenAndServe(":3000", nil))
-}
-func apiHandler(w http.ResponseWriter, r *http.Request) {}
+	env = common.LoadEnvFromFile("blockchain")
 
-func IndexHandler(entrypoint string) func(w http.ResponseWriter, r *http.Request) {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, entrypoint)
-	}
+	temp := blockchain.MakeInitialChain()
+	globalBlockchain = &temp
 
-	return http.HandlerFunc(fn)
+	globalBlockchain.AddMockTransactions()
+
+	log.Fatal(run())
+	//http.HandleFunc("/api/", apiHandler)
+	//http.Handle("/", http.FileServer(http.Dir("./common/frontend/build")))
+	//log.Fatal(http.ListenAndServe(":3000", nil))
 }
 
 func run() error {
@@ -72,14 +63,17 @@ func run() error {
 func makeMuxRouter() http.Handler {
 	muxRouter := mux.NewRouter()
 
-	muxRouter.HandleFunc("/", handleIndexHelp).Methods("GET")
-	muxRouter.HandleFunc("/blockchain", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/block/{index}", handleGetBlock).Methods("GET")
-	muxRouter.HandleFunc("/addTransaction", handleWriteTransaction).Methods("POST")
-	muxRouter.HandleFunc("/reputation/{address}", handleGetReputation).Methods("GET")
-	muxRouter.HandleFunc("/alias/{address}", handleGetAlias).Methods("GET")
+	muxRouter.HandleFunc("/api", handleIndexHelp).Methods("GET")
+	muxRouter.HandleFunc("/api/blockchain", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/api/block/{index}", handleGetBlock).Methods("GET")
+	muxRouter.HandleFunc("/api/addTransaction", handleWriteTransaction).Methods("POST")
+	muxRouter.HandleFunc("/api/reputation/{address}", handleGetReputation).Methods("GET")
+	muxRouter.HandleFunc("/api/alias/{address}", handleGetAlias).Methods("GET")
 
 	muxRouter.HandleFunc("/ws", handleConnections)
+
+	muxRouter.PathPrefix("/").Handler(
+		http.StripPrefix("/", http.FileServer(http.Dir("./common/frontend/build"))))
 
 	return muxRouter
 }

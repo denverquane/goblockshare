@@ -3,6 +3,7 @@ import { Table } from 'react-bootstrap';
 import { JSONRepSummary, ReputationDisplay } from './Reputation';
 import * as TxTypes from './TxTypes';
 import { Icon } from '@blueprintjs/core';
+import { BLOCKCHAIN_IP } from './App';
 
 export interface Transaction {
   Origin: {
@@ -114,7 +115,7 @@ export class TransactionDisplay extends React.Component<TransactionProps, Transa
   }
 
   getAlias = (addr: string) => {
-    fetch('http://dquane.tplinkdns.com:5000/alias/' + addr)
+    fetch('http://' + BLOCKCHAIN_IP + '/api/alias/' + addr)
       .then(results => {
         return results.json();
       }).then(data => {
@@ -123,10 +124,10 @@ export class TransactionDisplay extends React.Component<TransactionProps, Transa
         });
         this.setState({ alias: aliases[0] });
       });
-  }
+  };
 
   getReputation = (addr: string, recip: boolean) => {
-    fetch('http://dquane.tplinkdns.com:5000/reputation/' + addr)
+    fetch('http://' + BLOCKCHAIN_IP + '/api/reputation/' + addr)
       .then(results => {
         return results.json();
       }).then(data => {
@@ -139,7 +140,7 @@ export class TransactionDisplay extends React.Component<TransactionProps, Transa
           this.setState({ recipSummary: reps[0] });
         }
       });
-  }
+  };
 
   componentDidMount() {
     if (this.props.transaction) {

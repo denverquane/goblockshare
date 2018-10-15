@@ -13,7 +13,7 @@ import { renderBlock, renderSimpleBlock, Block } from './Block';
 import Sockette from 'sockette';
 
 // const logo = require('./logo.svg');
-export const BLOCKCHAIN_IP = 'http://dquane.tplinkdns.com:5000';
+export const BLOCKCHAIN_IP = 'localhost:5000';
 
 const MyToaster = Toaster.create({
   className: 'my-toaster',
@@ -76,7 +76,7 @@ function renderTitle(status: string, block: Block) {
 export default class App extends React.Component<SampleProps, SampleState> {
   /*tslint:disable*/
 
-  ws = new Sockette('ws://dquane.tplinkdns.com:5000/ws', {
+  ws = new Sockette('ws://' + BLOCKCHAIN_IP + '/ws', {
     timeout: 5e3,
     maxAttempts: 10,
     onopen: (e: any) => {
@@ -202,7 +202,7 @@ export default class App extends React.Component<SampleProps, SampleState> {
   }
 
   getBlocks() {
-    fetch(BLOCKCHAIN_IP + '/blockchain')
+    fetch('http://' + BLOCKCHAIN_IP + '/api/blockchain')
       .then(results => {
         return results.json();
       }).then(data => {
